@@ -39,17 +39,12 @@ struct drm_object
 struct plane : drm_object
 {
   drmModePlanePtr plane = nullptr;
-  uint32_t format;
+  uint32_t format = 0;
 };
 
 struct connector : drm_object
 {
   drmModeConnectorPtr connector = nullptr;
-};
-
-struct encoder
-{
-  drmModeEncoder *encoder = nullptr;
 };
 
 struct crtc : drm_object
@@ -67,7 +62,7 @@ class CDRMUtils
 {
 public:
   CDRMUtils();
-  virtual ~CDRMUtils() = default;
+  virtual ~CDRMUtils();
   virtual void FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer) {};
   virtual bool SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo) { return false; };
   virtual bool SetActive(bool active) { return false; };
@@ -86,10 +81,9 @@ public:
   bool AddProperty(drmModeAtomicReqPtr req, struct drm_object *object, const char *name, uint64_t value);
   bool SetProperty(struct drm_object *object, const char *name, uint64_t value);
 
-  int m_fd;
+  int m_fd = -1;
 
   struct connector *m_connector = nullptr;
-  struct encoder *m_encoder = nullptr;
   struct crtc *m_crtc = nullptr;
   struct plane *m_primary_plane = nullptr;
   struct plane *m_overlay_plane = nullptr;
@@ -97,19 +91,14 @@ public:
   drmModeAtomicReq *m_req = nullptr;
 
 protected:
-  bool OpenDrm();
+  bool OpenDrm(bool atomic);
+  void CloseDrm();
   drm_fb * DrmFbGetFromBo(struct gbm_bo *bo);
 
   int m_width = 0;
   int m_height = 0;
 
 private:
-  bool GetResources();
-  bool GetConnector();
-  bool GetEncoder();
-  bool GetCrtc();
-  bool GetPlanes();
-  bool GetPreferredMode();
   bool RestoreOriginalMode();
   static void DrmFbDestroyCallback(struct gbm_bo *bo, void *data);
 
@@ -117,6 +106,7 @@ private:
   std::string m_module;
   std::string m_device_path;
 
-  drmModeResPtr m_drm_resources = nullptr;
+  drmModeResPtr m_resources = nullptr;
+  drmModePlaneResPtr m_plane_resources = nullptr;
   drmModeCrtcPtr m_orig_crtc = nullptr;
 };

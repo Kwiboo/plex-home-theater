@@ -59,7 +59,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
       return;
     }
 
-    if (!videoLayer)
+    if (!videoLayer && m_overlay_plane->plane)
     {
       // disable overlay plane on modeset
       AddProperty(m_req, m_overlay_plane, "FB_ID", 0);
@@ -67,7 +67,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     }
   }
 
-  if (videoLayer)
+  if (videoLayer && m_overlay_plane->plane)
     plane = m_overlay_plane;
   else
     plane = m_primary_plane;
@@ -171,24 +171,13 @@ void CDRMAtomic::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
 
 bool CDRMAtomic::InitDrm()
 {
-  if (!CDRMUtils::OpenDrm())
+  if (!CDRMUtils::OpenDrm(true) ||
+      !CDRMUtils::InitDrm())
   {
-    return false;
-  }
-
-  auto ret = drmSetClientCap(m_fd, DRM_CLIENT_CAP_ATOMIC, 1);
-  if (ret)
-  {
-    CLog::Log(LOGERROR, "CDRMAtomic::%s - no atomic modesetting support: %s", __FUNCTION__, strerror(errno));
     return false;
   }
 
   m_req = drmModeAtomicAlloc();
-
-  if (!CDRMUtils::InitDrm())
-  {
-    return false;
-  }
 
   CLog::Log(LOGDEBUG, "CDRMAtomic::%s - initialized atomic DRM", __FUNCTION__);
   return true;
