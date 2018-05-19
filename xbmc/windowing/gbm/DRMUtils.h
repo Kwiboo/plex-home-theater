@@ -98,6 +98,9 @@ protected:
   bool OpenDrm();
   drm_fb * DrmFbGetFromBo(struct gbm_bo *bo);
 
+  int m_width = 0;
+  int m_height = 0;
+
 private:
   bool GetResources();
   bool GetConnector();
