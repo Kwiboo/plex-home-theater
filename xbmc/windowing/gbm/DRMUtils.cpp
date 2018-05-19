@@ -321,9 +321,13 @@ static drmModeModeInfoPtr GetPreferredMode(drmModeConnectorPtr connector)
       return mode;
     }
 
-    // Fall back to mode with highest resolution
+    // Fall back to mode with highest resolution or 1920x1080 @ 60 Hz
     int area = mode->hdisplay * mode->vdisplay;
-    if (area > fallback_area)
+    if (area > fallback_area ||
+        (mode->hdisplay == 1920 &&
+         mode->vdisplay == 1080 &&
+         mode->vrefresh == 60 &&
+         mode->clock == 148500))
     {
       fallback_mode = mode;
       fallback_area = area;
