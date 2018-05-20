@@ -677,10 +677,18 @@ std::vector<RESOLUTION_INFO> CDRMUtils::GetModes()
     drmModeModeInfoPtr mode = &m_connector->connector->modes[i];
     RESOLUTION_INFO res;
     res.iScreen = 0;
-    res.iWidth = mode->hdisplay;
-    res.iHeight = mode->vdisplay;
     res.iScreenWidth = mode->hdisplay;
     res.iScreenHeight = mode->vdisplay;
+    res.iWidth = res.iScreenWidth;
+    res.iHeight = res.iScreenHeight;
+
+    // TODO: limit iWidth/iHeight if enabled in settings
+    if (HasVideoPlane() && res.iScreenWidth >= 3840 && res.iScreenHeight >= 2160)
+    {
+      res.iWidth = mode->vrefresh > 30 ? 1280 : 1920;
+      res.iHeight = mode->vrefresh > 30 ? 720 : 1080;
+    }
+
     if (mode->clock % 5 != 0)
       res.fRefreshRate = (float)mode->vrefresh * (1000.0f/1001.0f);
     else
