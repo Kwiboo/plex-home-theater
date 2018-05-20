@@ -674,34 +674,34 @@ std::vector<RESOLUTION_INFO> CDRMUtils::GetModes()
 
   for(auto i = 0; i < m_connector->connector->count_modes; i++)
   {
+    drmModeModeInfoPtr mode = &m_connector->connector->modes[i];
     RESOLUTION_INFO res;
     res.iScreen = 0;
-    res.iWidth = m_connector->connector->modes[i].hdisplay;
-    res.iHeight = m_connector->connector->modes[i].vdisplay;
-    res.iScreenWidth = m_connector->connector->modes[i].hdisplay;
-    res.iScreenHeight = m_connector->connector->modes[i].vdisplay;
-    if (m_connector->connector->modes[i].clock % 5 != 0)
-      res.fRefreshRate = (float)m_connector->connector->modes[i].vrefresh * (1000.0f/1001.0f);
+    res.iWidth = mode->hdisplay;
+    res.iHeight = mode->vdisplay;
+    res.iScreenWidth = mode->hdisplay;
+    res.iScreenHeight = mode->vdisplay;
+    if (mode->clock % 5 != 0)
+      res.fRefreshRate = (float)mode->vrefresh * (1000.0f/1001.0f);
     else
-      res.fRefreshRate = m_connector->connector->modes[i].vrefresh;
+      res.fRefreshRate = mode->vrefresh;
     res.iSubtitles = static_cast<int>(0.965 * res.iHeight);
     res.fPixelRatio = 1.0f;
     res.bFullScreen = true;
     res.strId = std::to_string(i);
 
-    if(m_connector->connector->modes[i].flags & DRM_MODE_FLAG_3D_MASK)
+    if(mode->flags & DRM_MODE_FLAG_3D_MASK)
     {
-      if(m_connector->connector->modes[i].flags & DRM_MODE_FLAG_3D_TOP_AND_BOTTOM)
+      if(mode->flags & DRM_MODE_FLAG_3D_TOP_AND_BOTTOM)
       {
         res.dwFlags = D3DPRESENTFLAG_MODE3DTB;
       }
-      else if(m_connector->connector->modes[i].flags
-          & DRM_MODE_FLAG_3D_SIDE_BY_SIDE_HALF)
+      else if(mode->flags & DRM_MODE_FLAG_3D_SIDE_BY_SIDE_HALF)
       {
         res.dwFlags = D3DPRESENTFLAG_MODE3DSBS;
       }
     }
-    else if(m_connector->connector->modes[i].flags & DRM_MODE_FLAG_INTERLACE)
+    else if(mode->flags & DRM_MODE_FLAG_INTERLACE)
     {
       res.dwFlags = D3DPRESENTFLAG_INTERLACED;
     }
