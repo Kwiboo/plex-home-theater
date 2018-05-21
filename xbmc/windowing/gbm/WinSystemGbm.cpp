@@ -157,8 +157,6 @@ bool CWinSystemGbm::DestroyWindow()
 
 void CWinSystemGbm::UpdateResolutions()
 {
-  CWinSystemBase::UpdateResolutions();
-
   UpdateDesktopResolution(CDisplaySettings::GetInstance().GetResolutionInfo(RES_DESKTOP),
                           0,
                           m_DRM->m_mode->hdisplay,
