@@ -116,6 +116,34 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
   m_req = drmModeAtomicAlloc();
 }
 
+void CDRMAtomic::DisableVideoLayer()
+{
+  if (m_req)
+  {
+    AddProperty(m_req, m_primary_plane, "FB_ID", 0);
+    AddProperty(m_req, m_primary_plane, "CRTC_ID", 0);
+
+    auto ret = drmModeAtomicCommit(m_fd, m_req, DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
+    if (ret < 0)
+    {
+      CLog::Log(LOGERROR, "CDRMAtomic::%s - test commit failed: %s", __FUNCTION__, strerror(errno));
+    }
+    else if (ret == 0)
+    {
+      ret = drmModeAtomicCommit(m_fd, m_req, 0, nullptr);
+      if (ret < 0)
+      {
+        CLog::Log(LOGERROR, "CDRMAtomic::%s - atomic commit failed: %s", __FUNCTION__, strerror(errno));
+      }
+    }
+
+    drmModeAtomicFree(m_req);
+    m_req = drmModeAtomicAlloc();
+  }
+
+  m_need_modeset = true;
+}
+
 void CDRMAtomic::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
 {
   uint32_t flags = 0;

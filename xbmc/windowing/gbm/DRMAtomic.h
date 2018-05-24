@@ -32,6 +32,7 @@ public:
   virtual bool SetActive(bool active) override;
   virtual bool InitDrm() override;
   virtual void DestroyDrm() override;
+  virtual void DisableVideoLayer() override;
 
 private:
   void DrmAtomicCommit(int fb_id, int flags, bool rendered, bool videoLayer);
