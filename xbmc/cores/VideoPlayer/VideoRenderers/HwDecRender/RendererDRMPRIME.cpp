@@ -72,6 +72,8 @@ bool CRendererDRMPRIME::Configure(const VideoPicture& picture, float fps, unsign
   Flush(false);
 
   m_bConfigured = true;
+
+  CServiceBroker::GetWinSystem()->GetGfxContext().SetFullScreenVideo(true);
   return true;
 }
 

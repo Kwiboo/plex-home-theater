@@ -292,6 +292,9 @@ void CRenderManager::FrameMove()
       if (!Configure())
         return;
 
+      if (m_renderState == STATE_CONFIGURED)
+        UpdateResolution();
+
       firstFrame = true;
       FrameWait(50);
     }
