@@ -74,6 +74,7 @@ public:
   std::string GetDevicePath() const { return m_device_path; }
   bool HasVideoPlane() const { return m_overlay_plane->plane != nullptr; }
 
+  RESOLUTION_INFO GetCurrentMode();
   std::vector<RESOLUTION_INFO> GetModes();
   bool SetMode(const RESOLUTION_INFO& res);
   void WaitVBlank();
@@ -101,6 +102,7 @@ protected:
 private:
   bool RestoreOriginalMode();
   static void DrmFbDestroyCallback(struct gbm_bo *bo, void *data);
+  RESOLUTION_INFO GetResolutionInfo(drmModeModeInfoPtr mode);
 
   int m_crtc_index;
   std::string m_module;
