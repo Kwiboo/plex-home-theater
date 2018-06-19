@@ -344,6 +344,22 @@ static drmModeModeInfoPtr GetPreferredMode(drmModeConnectorPtr connector)
   return nullptr;
 }
 
+// video_plane, osd_plane, gui_plane
+// - video is always rendered on video_plane
+// - gui is always rendered on gui_plane
+//
+// 1. find first plane with NVxx/YUxx/YVxx format -> use as video_plane
+//    - test if plane supports AR24 -> set supports_gui=true
+// 2a. if no video plane -> find primary plane -> use XR24 format -> set gui_plane (video/osd_plane=null)
+// 2b. else -> find first plane that supports AR24 (and is not video_plane) -> set osd_plane (set gui_plane=video_plane if supports_gui=true, else gui_plane=osd_plane)
+//
+// on video layer activated:
+// - has osd_plane and supports_gui=true -> set gui_plane=osd_plane
+// on video layer deactivated:
+// - has osd_plane and supports_gui=true -> set gui_plane=video_plane and disable osd_plane
+//
+// use drm prime egl rendering if video_plane=null
+
 static bool SupportsFormat(drmModePlanePtr plane, uint32_t format)
 {
   for (uint32_t i = 0; i < plane->count_formats; i++)
@@ -351,6 +367,55 @@ static bool SupportsFormat(drmModePlanePtr plane, uint32_t format)
       return true;
 
   return false;
+}
+
+#define fourcc_match(f, a, b) (((uint32_t)(f) & 0xffff) == fourcc_code(a, b, 0, 0))
+
+static drmModePlanePtr GetVideoPlane(int fd, drmModePlaneResPtr resources, int crtc_index)
+{
+  for (uint32_t i = 0; i < resources->count_planes; i++)
+  {
+    drmModePlanePtr plane = drmModeGetPlane(fd, resources->planes[i]);
+    if (plane && plane->possible_crtcs & (1 << crtc_index))
+    {
+      for (uint32_t j = 0; j < plane->count_formats; j++)
+      {
+        uint32_t format = plane->formats[j];
+        // check for one of NVxx/YUxx/YVxx formats
+        if (fourcc_match(format, 'N', 'V') ||
+            fourcc_match(format, 'Y', 'U') ||
+            fourcc_match(format, 'Y', 'V'))
+        {
+          CLog::Log(LOGDEBUG, "CDRMUtils::%s - found video plane %u", __FUNCTION__, plane->plane_id);
+          return plane;
+        }
+      }
+    }
+    drmModeFreePlane(plane);
+  }
+
+  CLog::Log(LOGWARNING, "CDRMUtils::%s - could not find video plane", __FUNCTION__);
+  return nullptr;
+}
+
+static drmModePlanePtr GetOsdPlane(int fd, drmModePlaneResPtr resources, int crtc_index, uint32_t video_plane_id)
+{
+  for (uint32_t i = 0; i < resources->count_planes; i++)
+  {
+    drmModePlanePtr plane = drmModeGetPlane(fd, resources->planes[i]);
+    if (plane &&
+        plane->possible_crtcs & (1 << crtc_index) &&
+        plane->plane_id != video_plane_id &&
+        SupportsFormat(plane, DRM_FORMAT_ARGB8888))
+    {
+      CLog::Log(LOGDEBUG, "CDRMUtils::%s - found osd plane %u", __FUNCTION__, plane->plane_id);
+      return plane;
+    }
+    drmModeFreePlane(plane);
+  }
+
+  CLog::Log(LOGWARNING, "CDRMUtils::%s - could not find osd plane", __FUNCTION__);
+  return nullptr;
 }
 
 static drmModePlanePtr GetPlane(int fd, drmModePlaneResPtr resources, int crtc_index, uint32_t type)
@@ -478,6 +543,27 @@ bool CDRMUtils::OpenDrm(bool atomic)
             goto close;
         }
       }
+
+    /*
+    drmModePlanePtr video_plane = nullptr;
+    drmModePlanePtr osd_plane = nullptr;
+    drmModePlanePtr primary_plane = nullptr;
+    if (atomic)
+    {
+      video_plane = GetVideoPlane(m_fd, plane_resources, crtc_index);
+      if (video_plane)
+        osd_plane = GetOsdPlane(m_fd, plane_resources, crtc_index, video_plane->plane_id);
+
+      if (!osd_plane && video_plane)
+      {
+        drmModeFreePlane(video_plane);
+        video_plane = nullptr;
+      }
+    }
+
+    if (!video_plane)
+      primary_plane = GetPlane(m_fd, plane_resources, crtc_index, DRM_PLANE_TYPE_PRIMARY);
+    */
 
       m_module = module;
       m_device_path = device;
