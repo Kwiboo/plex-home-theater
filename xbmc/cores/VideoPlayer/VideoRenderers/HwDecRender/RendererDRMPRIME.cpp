@@ -25,6 +25,7 @@
 #include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
 #include "ServiceBroker.h"
 #include "settings/DisplaySettings.h"
+#include "settings/lib/Setting.h"
 #include "settings/Settings.h"
 #include "utils/log.h"
 #include "windowing/gbm/DRMAtomic.h"
@@ -55,10 +56,19 @@ CBaseRenderer* CRendererDRMPRIME::Create(CVideoBuffer* buffer)
   return nullptr;
 }
 
-bool CRendererDRMPRIME::Register()
+void CRendererDRMPRIME::Register()
 {
+  CWinSystemGbmGLESContext* winSystem = dynamic_cast<CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
+  drmModePlanePtr plane = winSystem->GetDrm()->GetPrimaryPlane()->plane;
+
+  if (!plane)
+  {
+    CServiceBroker::GetSettings().SetInt(SETTING_VIDEOPLAYER_USEPRIMERENDERER, 1);
+    CServiceBroker::GetSettings().GetSetting(SETTING_VIDEOPLAYER_USEPRIMERENDERER)->SetVisible(false);
+    return;
+  }
+
   VIDEOPLAYER::CRendererFactory::RegisterRenderer("drm_prime", CRendererDRMPRIME::Create);
-  return true;
 }
 
 bool CRendererDRMPRIME::Configure(const VideoPicture& picture, float fps, unsigned int orientation)
