@@ -29,11 +29,14 @@
 #include <unistd.h>
 
 #include "WinSystemGbmGLESContext.h"
+#include "settings/Settings.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "windowing/GraphicContext.h"
 
 #include "DRMUtils.h"
+
+const std::string SETTING_VIDEOSCREEN_LIMITGUISIZE = "videoscreen.limitguisize";
 
 CDRMUtils::CDRMUtils()
   : m_connector(new connector)
@@ -613,6 +616,30 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
   res.iScreenHeight = mode->vdisplay;
   res.iWidth = res.iScreenWidth;
   res.iHeight = res.iScreenHeight;
+
+  int limit = CServiceBroker::GetSettings().GetInt(SETTING_VIDEOSCREEN_LIMITGUISIZE);
+  if (limit > 0 && res.iScreenWidth > 1920 && res.iScreenHeight > 1080)
+  {
+    switch (limit)
+    {
+    case 1:
+      res.iWidth = 1280;
+      res.iHeight = 720;
+      break;
+    case 2:
+      res.iWidth = mode->vrefresh > 30 ? 1280 : 1920;
+      res.iHeight = mode->vrefresh > 30 ? 720 : 1080;
+      break;
+    case 3:
+      res.iWidth = 1920;
+      res.iHeight = 1080;
+      break;
+    case 4:
+      res.iWidth = mode->vrefresh > 30 ? 1920 : res.iScreenWidth;
+      res.iHeight = mode->vrefresh > 30 ? 1080 : res.iScreenHeight;
+      break;
+    }
+  }
 
   if (mode->clock % 5 != 0)
     res.fRefreshRate = static_cast<float>(mode->vrefresh) * (1000.0f/1001.0f);
