@@ -269,5 +269,46 @@ void CRendererDRMPRIME::SetVideoPlane(CVideoBufferDRMPRIME* buffer)
     m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "CRTC_Y",  crtc_y);
     m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "CRTC_W",  crtc_w);
     m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "CRTC_H",  crtc_h);
+
+    if (!m_videoLayerManager)
+    {
+      // register a video layer manager to reference count video buffers being presented on screen
+      m_videoLayerManager = std::make_shared<CVideoLayerManagerDRMPRIME>();
+      m_DRM->RegisterVideoLayerManager(m_videoLayerManager);
+
+      // TODO: set color depth, HDR properties etc
+    }
+
+    m_videoLayerManager->Acquire(buffer);
   }
+}
+
+CVideoLayerManagerDRMPRIME::~CVideoLayerManagerDRMPRIME()
+{
+  if (m_prev_buffer)
+    m_prev_buffer->Release();
+  if (m_buffer)
+    m_buffer->Release();
+}
+
+void CVideoLayerManagerDRMPRIME::Disable(CDRMUtils* drm)
+{
+  drm->AddProperty(drm->GetPrimaryPlane(), "FB_ID", 0);
+  drm->AddProperty(drm->GetPrimaryPlane(), "CRTC_ID", 0);
+
+  // TODO: unset color depth, HDR properties etc
+}
+
+void CVideoLayerManagerDRMPRIME::Acquire(CVideoBuffer* buffer)
+{
+  // release the buffer that is no longer presented on screen
+  if (m_prev_buffer)
+    m_prev_buffer->Release();
+
+  // release the buffer currently being presented next call
+  m_prev_buffer = m_buffer;
+
+  // reference count the buffer that is about to be presented on screen
+  m_buffer = buffer;
+  m_buffer->Acquire();
 }

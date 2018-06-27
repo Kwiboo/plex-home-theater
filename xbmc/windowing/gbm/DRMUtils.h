@@ -71,6 +71,15 @@ struct drm_fb
   uint32_t format;
 };
 
+class CDRMUtils;
+
+class CVideoLayerManager
+{
+public:
+  virtual ~CVideoLayerManager() = default;
+  virtual void Disable(CDRMUtils* drm) {};
+};
+
 class CDRMUtils
 {
 public:
@@ -81,6 +90,8 @@ public:
   virtual bool SetActive(bool active) { return false; };
   virtual bool InitDrm();
   virtual void DestroyDrm();
+
+  void RegisterVideoLayerManager(std::shared_ptr<CVideoLayerManager> manager) { m_videoLayerManager = manager; };
 
   std::string GetModule() const { return m_module; }
   std::string GetDevicePath() const { return m_device_path; }
@@ -112,6 +123,8 @@ protected:
 
   int m_width = 0;
   int m_height = 0;
+
+  std::shared_ptr<CVideoLayerManager> m_videoLayerManager;
 
 private:
   static bool SupportsFormat(drmModePlanePtr plane, uint32_t format);

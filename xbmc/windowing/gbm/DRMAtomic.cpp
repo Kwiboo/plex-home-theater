@@ -81,6 +81,12 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     AddProperty(m_overlay_plane, "CRTC_ID", 0);
   }
 
+  if (m_videoLayerManager && !videoLayer)
+  {
+    // disable video plane pre-commit as soon as video layer no longer is active
+    m_videoLayerManager->Disable(this);
+  }
+
   auto ret = drmModeAtomicCommit(m_fd, m_req, flags | DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
   if (ret < 0)
   {
@@ -93,6 +99,12 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     {
       CLog::Log(LOGERROR, "CDRMAtomic::%s - atomic commit failed: %s", __FUNCTION__, strerror(errno));
     }
+  }
+
+  if (m_videoLayerManager && !videoLayer)
+  {
+    // delete video layer manager post-commit as soon as video layer no longer is active
+    m_videoLayerManager.reset();
   }
 
   if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)

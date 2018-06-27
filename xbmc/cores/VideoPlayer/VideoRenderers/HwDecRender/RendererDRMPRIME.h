@@ -24,6 +24,18 @@
 #include "cores/VideoPlayer/VideoRenderers/BaseRenderer.h"
 #include "windowing/gbm/WinSystemGbmGLESContext.h"
 
+class CVideoLayerManagerDRMPRIME
+  : public CVideoLayerManager
+{
+public:
+  ~CVideoLayerManagerDRMPRIME();
+  void Disable(CDRMUtils* drm) override;
+  void Acquire(CVideoBuffer* buffer);
+private:
+  CVideoBuffer* m_buffer = nullptr;
+  CVideoBuffer* m_prev_buffer = nullptr;
+};
+
 class CRendererDRMPRIME
   : public CBaseRenderer
 {
@@ -66,6 +78,7 @@ private:
   int m_iLastRenderBuffer = -1;
 
   std::shared_ptr<CDRMUtils> m_DRM;
+  std::shared_ptr<CVideoLayerManagerDRMPRIME> m_videoLayerManager;
 
   struct BUFFER
   {
