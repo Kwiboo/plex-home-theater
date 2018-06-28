@@ -59,16 +59,14 @@ CBaseRenderer* CRendererDRMPRIME::Create(CVideoBuffer* buffer)
 void CRendererDRMPRIME::Register()
 {
   CWinSystemGbmGLESContext* winSystem = dynamic_cast<CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
-  drmModePlanePtr plane = winSystem->GetDrm()->GetPrimaryPlane()->plane;
-
-  if (!plane)
+  if (winSystem && winSystem->GetDrm()->GetPrimaryPlane()->plane)
   {
-    CServiceBroker::GetSettings().SetInt(SETTING_VIDEOPLAYER_USEPRIMERENDERER, 1);
-    CServiceBroker::GetSettings().GetSetting(SETTING_VIDEOPLAYER_USEPRIMERENDERER)->SetVisible(false);
+    VIDEOPLAYER::CRendererFactory::RegisterRenderer("drm_prime", CRendererDRMPRIME::Create);
     return;
   }
 
-  VIDEOPLAYER::CRendererFactory::RegisterRenderer("drm_prime", CRendererDRMPRIME::Create);
+  CServiceBroker::GetSettings().SetInt(SETTING_VIDEOPLAYER_USEPRIMERENDERER, 1);
+  CServiceBroker::GetSettings().GetSetting(SETTING_VIDEOPLAYER_USEPRIMERENDERER)->SetVisible(false);
 }
 
 bool CRendererDRMPRIME::Configure(const VideoPicture& picture, float fps, unsigned int orientation)
