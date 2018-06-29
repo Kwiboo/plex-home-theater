@@ -99,6 +99,7 @@ public:
   struct plane* GetPrimaryPlane() const { return m_primary_plane; }
   struct plane* GetOverlayPlane() const { return m_overlay_plane; }
   struct crtc* GetCrtc() const { return m_crtc; }
+  struct connector* GetConnector() const { return m_connector; }
 
   RESOLUTION_INFO GetCurrentMode();
   std::vector<RESOLUTION_INFO> GetModes();

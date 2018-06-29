@@ -271,6 +271,8 @@ void CRendererDRMPRIME::SetVideoPlane(CVideoBufferDRMPRIME* buffer)
       m_DRM->RegisterVideoLayerManager(m_videoLayerManager);
 
       // TODO: set color depth, HDR properties etc
+      //m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_depth", ...);
+      //m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_format", ...);
     }
 
     m_videoLayerManager->Acquire(buffer);
