@@ -463,7 +463,7 @@ void CVideoLayerBridgeRockchip::Disable()
   m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "EOTF", HDMI_EOTF_TRADITIONAL_GAMMA_SDR);
   m_DRM->AddProperty(m_DRM->GetConnector(), "HDR_SOURCE_METADATA", 0);
   m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_depth", 8);
-  m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_format", HDMI_OUTPUT_DEFAULT_RGB);
+  m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_format", HDMI_OUTPUT_YCBCR_HQ);
   m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_colorimetry", 0);
   m_DRM->SetActive(true);
 
