@@ -35,6 +35,7 @@ public:
   AVDRMFrameDescriptor* GetDescriptor() const { return reinterpret_cast<AVDRMFrameDescriptor*>(m_pFrame->data[0]); }
   uint32_t GetWidth() const { return m_pFrame->width; }
   uint32_t GetHeight() const { return m_pFrame->height; }
+  AVFrame* GetFrame() const { return m_pFrame; }
 protected:
   AVFrame* m_pFrame = nullptr;
 };

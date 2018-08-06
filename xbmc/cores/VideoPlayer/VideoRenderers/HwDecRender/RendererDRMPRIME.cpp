@@ -166,7 +166,12 @@ void CRendererDRMPRIME::RenderUpdate(int index, int index2, bool clear, unsigned
     CWinSystemGbmEGLContext* winSystem = static_cast<CWinSystemGbmEGLContext*>(CServiceBroker::GetWinSystem());
     m_videoLayerBridge = std::dynamic_pointer_cast<CVideoLayerBridgeDRMPRIME>(winSystem->GetVideoLayerBridge());
     if (!m_videoLayerBridge)
-      m_videoLayerBridge = std::make_shared<CVideoLayerBridgeDRMPRIME>(winSystem->GetDrm());
+    {
+      if (winSystem->GetDrm()->GetModule() == "rockchip")
+        m_videoLayerBridge = std::make_shared<CVideoLayerBridgeRockchip>(winSystem->GetDrm());
+      else
+        m_videoLayerBridge = std::make_shared<CVideoLayerBridgeDRMPRIME>(winSystem->GetDrm());
+    }
     winSystem->RegisterVideoLayerBridge(m_videoLayerBridge);
   }
 
@@ -346,4 +351,121 @@ void CVideoLayerBridgeDRMPRIME::SetVideoPlane(CVideoBufferDRMPRIME* buffer, cons
   m_DRM->AddProperty(plane, "CRTC_Y", static_cast<int32_t>(destRect.y1) & ~1);
   m_DRM->AddProperty(plane, "CRTC_W", (static_cast<uint32_t>(destRect.Width()) + 1) & ~1);
   m_DRM->AddProperty(plane, "CRTC_H", (static_cast<uint32_t>(destRect.Height()) + 1) & ~1);
+}
+
+//------------------------------------------------------------------------------
+
+#include <linux/videodev2.h>
+
+enum hdmi_output_format {
+	HDMI_OUTPUT_DEFAULT_RGB,
+	HDMI_OUTPUT_YCBCR444,
+	HDMI_OUTPUT_YCBCR422,
+	HDMI_OUTPUT_YCBCR420,
+	HDMI_OUTPUT_YCBCR_HQ,
+	HDMI_OUTPUT_YCBCR_LQ,
+};
+
+enum hdmi_colorimetry {
+	HDMI_COLORIMETRY_NONE,
+	HDMI_COLORIMETRY_ITU_601,
+	HDMI_COLORIMETRY_ITU_709,
+	HDMI_COLORIMETRY_EXTENDED,
+};
+
+enum hdmi_extended_colorimetry {
+	HDMI_EXTENDED_COLORIMETRY_XV_YCC_601,
+	HDMI_EXTENDED_COLORIMETRY_XV_YCC_709,
+	HDMI_EXTENDED_COLORIMETRY_S_YCC_601,
+	HDMI_EXTENDED_COLORIMETRY_ADOBE_YCC_601,
+	HDMI_EXTENDED_COLORIMETRY_ADOBE_RGB,
+
+	/* The following EC values are only defined in CEA-861-F. */
+	HDMI_EXTENDED_COLORIMETRY_BT2020_CONST_LUM,
+	HDMI_EXTENDED_COLORIMETRY_BT2020,
+	HDMI_EXTENDED_COLORIMETRY_RESERVED,
+};
+
+#define RK_HDMI_COLORIMETRY_BT2020 (HDMI_COLORIMETRY_EXTENDED + HDMI_EXTENDED_COLORIMETRY_BT2020)
+
+enum hdmi_metadata_type {
+	HDMI_STATIC_METADATA_TYPE1 = 1,
+};
+
+enum hdmi_eotf {
+	HDMI_EOTF_TRADITIONAL_GAMMA_SDR,
+	HDMI_EOTF_TRADITIONAL_GAMMA_HDR,
+	HDMI_EOTF_SMPTE_ST2084,
+	HDMI_EOTF_BT_2100_HLG,
+};
+
+static int GetColorSpace(bool is10bit, AVFrame* frame)
+{
+  if (is10bit && frame->color_primaries != AVCOL_PRI_BT709)
+    return V4L2_COLORSPACE_BT2020;
+  if (frame->color_primaries == AVCOL_PRI_SMPTE170M)
+    return V4L2_COLORSPACE_SMPTE170M;
+  return V4L2_COLORSPACE_REC709;
+}
+
+static int GetEOTF(bool is10bit, AVFrame* frame)
+{
+  if (is10bit)
+  {
+    if (frame->color_trc == AVCOL_TRC_SMPTE2084)
+      return HDMI_EOTF_SMPTE_ST2084;
+    if (frame->color_trc == AVCOL_TRC_ARIB_STD_B67 ||
+        frame->color_trc == AVCOL_TRC_BT2020_10)
+      return HDMI_EOTF_BT_2100_HLG;
+  }
+  return HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
+}
+
+void CVideoLayerBridgeRockchip::Configure(CVideoBufferDRMPRIME* buffer)
+{
+  AVDRMFrameDescriptor* descriptor = buffer->GetDescriptor();
+  if (descriptor && descriptor->nb_layers)
+  {
+    AVDRMLayerDescriptor* layer = &descriptor->layers[0];
+    bool is10bit = layer->format == DRM_FORMAT_NV12_10;
+    AVFrame* frame = buffer->GetFrame();
+
+    m_hdr_metadata.type = HDMI_STATIC_METADATA_TYPE1;
+    m_hdr_metadata.eotf = GetEOTF(is10bit, frame);
+
+    if (m_hdr_blob_id)
+      drmModeDestroyPropertyBlob(m_DRM->GetFileDescriptor(), m_hdr_blob_id);
+    m_hdr_blob_id = 0;
+
+    if (m_hdr_metadata.eotf)
+      drmModeCreatePropertyBlob(m_DRM->GetFileDescriptor(), &m_hdr_metadata, sizeof(m_hdr_metadata), &m_hdr_blob_id);
+
+    CLog::Log(LOGNOTICE, "CVideoLayerBridgeRockchip::{} - format={} is10bit={} width={} height={} colorspace={} color_primaries={} color_trc={} color_range={} eotf={} blob_id={}",
+              __FUNCTION__, layer->format, is10bit, frame->width, frame->height, frame->colorspace, frame->color_primaries, frame->color_trc, frame->color_range, m_hdr_metadata.eotf, m_hdr_blob_id);
+
+    m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "COLOR_SPACE", GetColorSpace(is10bit, frame));
+    m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "EOTF", m_hdr_metadata.eotf);
+    m_DRM->AddProperty(m_DRM->GetConnector(), "HDR_SOURCE_METADATA", m_hdr_blob_id);
+    m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_depth", is10bit ? 10 : 8);
+    m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_format", HDMI_OUTPUT_YCBCR_HQ);
+    m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_colorimetry", is10bit ? RK_HDMI_COLORIMETRY_BT2020 : 0);
+    m_DRM->SetActive(true);
+  }
+}
+
+void CVideoLayerBridgeRockchip::Disable()
+{
+  CVideoLayerBridgeDRMPRIME::Disable();
+
+  m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "COLOR_SPACE", V4L2_COLORSPACE_DEFAULT);
+  m_DRM->AddProperty(m_DRM->GetPrimaryPlane(), "EOTF", HDMI_EOTF_TRADITIONAL_GAMMA_SDR);
+  m_DRM->AddProperty(m_DRM->GetConnector(), "HDR_SOURCE_METADATA", 0);
+  m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_depth", 8);
+  m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_format", HDMI_OUTPUT_DEFAULT_RGB);
+  m_DRM->AddProperty(m_DRM->GetConnector(), "hdmi_output_colorimetry", 0);
+  m_DRM->SetActive(true);
+
+  if (m_hdr_blob_id)
+    drmModeDestroyPropertyBlob(m_DRM->GetFileDescriptor(), m_hdr_blob_id);
+  m_hdr_blob_id = 0;
 }
