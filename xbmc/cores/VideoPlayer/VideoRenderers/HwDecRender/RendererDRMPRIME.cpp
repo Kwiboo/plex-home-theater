@@ -10,6 +10,7 @@
 
 #include "cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.h"
 #include "cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h"
+#include "cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeRockchip.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderCapture.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderFactory.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
@@ -177,7 +178,12 @@ void CRendererDRMPRIME::RenderUpdate(int index, int index2, bool clear, unsigned
     CWinSystemGbm* winSystem = static_cast<CWinSystemGbm*>(CServiceBroker::GetWinSystem());
     m_videoLayerBridge = std::dynamic_pointer_cast<CVideoLayerBridgeDRMPRIME>(winSystem->GetVideoLayerBridge());
     if (!m_videoLayerBridge)
-      m_videoLayerBridge = std::make_shared<CVideoLayerBridgeDRMPRIME>(winSystem->GetDrm());
+    {
+      if (winSystem->GetDrm()->GetModule() == "rockchip")
+        m_videoLayerBridge = std::make_shared<CVideoLayerBridgeRockchip>(winSystem->GetDrm());
+      else
+        m_videoLayerBridge = std::make_shared<CVideoLayerBridgeDRMPRIME>(winSystem->GetDrm());
+    }
     winSystem->RegisterVideoLayerBridge(m_videoLayerBridge);
   }
 
