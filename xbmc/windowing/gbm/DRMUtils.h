@@ -80,6 +80,7 @@ public:
   std::vector<uint64_t> *GetPrimaryPlaneModifiersForFormat(uint32_t format) { return &m_primary_plane->modifiers_map[format]; }
   std::vector<uint64_t> *GetOverlayPlaneModifiersForFormat(uint32_t format) { return &m_overlay_plane->modifiers_map[format]; }
   struct crtc* GetCrtc() const { return m_crtc; }
+  struct connector* GetConnector() const { return m_connector; }
 
   virtual RESOLUTION_INFO GetCurrentMode();
   virtual std::vector<RESOLUTION_INFO> GetModes();
