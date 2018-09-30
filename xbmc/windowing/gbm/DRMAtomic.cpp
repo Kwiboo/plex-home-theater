@@ -14,6 +14,7 @@
 #include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
 #include "ServiceBroker.h"
+#include "settings/lib/SettingsManager.h"
 #include "settings/Settings.h"
 #include "utils/log.h"
 
@@ -45,6 +46,11 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     if (!AddProperty(m_crtc, "ACTIVE", m_active ? 1 : 0))
     {
       return;
+    }
+
+    if (SupportsProperty(m_connector, "content type"))
+    {
+      AddProperty(m_connector, "content type", GetHdmiContentType(videoLayer));
     }
   }
 
@@ -148,12 +154,27 @@ bool CDRMAtomic::InitDrm()
     CLog::Log(LOGDEBUG, "CDRMAtomic::%s - failed to reset planes", __FUNCTION__);
   }
 
+  std::set<std::string> settingSet;
+
+  if (SupportsProperty(m_connector, "content type"))
+  {
+    CServiceBroker::GetSettings()->GetSetting(SETTING_VIDEOSCREEN_HDMICONTENTTYPE)->SetVisible(true);
+    settingSet.insert(SETTING_VIDEOSCREEN_HDMICONTENTTYPE);
+  }
+
+  if (!settingSet.empty())
+  {
+    CServiceBroker::GetSettings()->GetSettingsManager()->RegisterCallback(this, settingSet);
+  }
+
   CLog::Log(LOGDEBUG, "CDRMAtomic::%s - initialized atomic DRM", __FUNCTION__);
   return true;
 }
 
 void CDRMAtomic::DestroyDrm()
 {
+  CServiceBroker::GetSettings()->GetSettingsManager()->UnregisterCallback(this);
+
   CDRMUtils::DestroyDrm();
 
   drmModeAtomicFree(m_req);
@@ -224,4 +245,16 @@ bool CDRMAtomic::ResetPlanes()
   drmModeFreePlaneResources(plane_resources);
 
   return true;
+}
+
+void CDRMAtomic::OnSettingChanged(std::shared_ptr<const CSetting> setting)
+{
+  if (!setting)
+    return;
+
+  const std::string &settingId = setting->GetId();
+  if (settingId == SETTING_VIDEOSCREEN_HDMICONTENTTYPE)
+  {
+    m_need_modeset = true;
+  }
 }

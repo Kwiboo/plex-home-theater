@@ -90,6 +90,11 @@ public:
   virtual bool AddProperty(struct drm_object *object, const char *name, uint64_t value) { return false; }
   virtual bool SetProperty(struct drm_object *object, const char *name, uint64_t value) { return false; }
 
+  static const std::string SETTING_VIDEOSCREEN_HDMICONTENTTYPE;
+  static const std::string SETTING_VIDEOPLAYER_HDMICONTENTTYPE;
+
+  int GetHdmiContentType(bool videoLayer);
+
 protected:
   bool OpenDrm(bool needConnector);
   uint32_t GetPropertyId(struct drm_object *object, const char *name);

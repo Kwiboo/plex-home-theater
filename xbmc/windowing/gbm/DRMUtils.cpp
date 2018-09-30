@@ -16,11 +16,15 @@
 #include <EGL/egl.h>
 #include <unistd.h>
 
+#include "settings/Settings.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "windowing/GraphicContext.h"
 
 #include "DRMUtils.h"
+
+const std::string CDRMUtils::SETTING_VIDEOSCREEN_HDMICONTENTTYPE = "videoscreen.hdmicontenttype";
+const std::string CDRMUtils::SETTING_VIDEOPLAYER_HDMICONTENTTYPE = "videoplayer.hdmicontenttype";
 
 CDRMUtils::CDRMUtils()
   : m_connector(new connector)
@@ -726,4 +730,14 @@ std::vector<RESOLUTION_INFO> CDRMUtils::GetModes()
   }
 
   return resolutions;
+}
+
+int CDRMUtils::GetHdmiContentType(bool videoLayer)
+{
+  int contentType = 0;
+  if (videoLayer)
+    contentType = CServiceBroker::GetSettings()->GetInt(SETTING_VIDEOPLAYER_HDMICONTENTTYPE);
+  if (contentType == 0)
+    contentType = CServiceBroker::GetSettings()->GetInt(SETTING_VIDEOSCREEN_HDMICONTENTTYPE);
+  return contentType;
 }
