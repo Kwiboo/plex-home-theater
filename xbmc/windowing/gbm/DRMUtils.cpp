@@ -25,6 +25,8 @@
 
 const std::string CDRMUtils::SETTING_VIDEOSCREEN_HDMICONTENTTYPE = "videoscreen.hdmicontenttype";
 const std::string CDRMUtils::SETTING_VIDEOPLAYER_HDMICONTENTTYPE = "videoplayer.hdmicontenttype";
+const std::string CDRMUtils::SETTING_VIDEOSCREEN_HDMIOUTPUTFORMAT = "videoscreen.hdmioutputformat";
+const std::string CDRMUtils::SETTING_VIDEOPLAYER_HDMIOUTPUTFORMAT = "videoplayer.hdmioutputformat";
 
 CDRMUtils::CDRMUtils()
   : m_connector(new connector)
@@ -740,4 +742,14 @@ int CDRMUtils::GetHdmiContentType(bool videoLayer)
   if (contentType == 0)
     contentType = CServiceBroker::GetSettings()->GetInt(SETTING_VIDEOSCREEN_HDMICONTENTTYPE);
   return contentType;
+}
+
+int CDRMUtils::GetHdmiOutputFormat(bool videoLayer)
+{
+  int outputFormat = 0;
+  if (videoLayer)
+    outputFormat = CServiceBroker::GetSettings()->GetInt(SETTING_VIDEOPLAYER_HDMIOUTPUTFORMAT);
+  if (outputFormat == 0)
+    outputFormat = CServiceBroker::GetSettings()->GetInt(SETTING_VIDEOSCREEN_HDMIOUTPUTFORMAT);
+  return outputFormat;
 }

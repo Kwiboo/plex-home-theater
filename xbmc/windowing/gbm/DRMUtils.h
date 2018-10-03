@@ -92,8 +92,11 @@ public:
 
   static const std::string SETTING_VIDEOSCREEN_HDMICONTENTTYPE;
   static const std::string SETTING_VIDEOPLAYER_HDMICONTENTTYPE;
+  static const std::string SETTING_VIDEOSCREEN_HDMIOUTPUTFORMAT;
+  static const std::string SETTING_VIDEOPLAYER_HDMIOUTPUTFORMAT;
 
   int GetHdmiContentType(bool videoLayer);
+  int GetHdmiOutputFormat(bool videoLayer);
 
 protected:
   bool OpenDrm(bool needConnector);
