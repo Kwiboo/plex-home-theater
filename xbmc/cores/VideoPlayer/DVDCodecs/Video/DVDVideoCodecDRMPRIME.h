@@ -48,6 +48,7 @@ public:
   uint32_t GetHeight() const { return m_pFrame->height; }
   int GetColorEncoding() const;
   int GetColorRange() const;
+  AVFrame* GetFrame() const { return m_pFrame; }
 protected:
   AVFrame* m_pFrame = nullptr;
 };
