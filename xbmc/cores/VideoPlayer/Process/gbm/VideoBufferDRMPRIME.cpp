@@ -78,6 +78,32 @@ int CVideoBufferDRMPRIME::GetColorRange() const
   }
 }
 
+uint8_t CVideoBufferDRMPRIME::GetEOTF() const
+{
+  switch (m_pFrame->color_trc)
+  {
+  case AVCOL_TRC_SMPTE2084:
+    return HDMI_EOTF_SMPTE_ST2084;
+  case AVCOL_TRC_ARIB_STD_B67:
+  case AVCOL_TRC_BT2020_10:
+    return HDMI_EOTF_BT_2100_HLG;
+  default:
+    return HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
+  }
+}
+
+AVMasteringDisplayMetadata* CVideoBufferDRMPRIME::GetMasteringDisplayMetadata() const
+{
+  AVFrameSideData* sd = av_frame_get_side_data(m_pFrame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
+  return (sd && sd->data) ? reinterpret_cast<AVMasteringDisplayMetadata*>(sd->data) : nullptr;
+}
+
+AVContentLightMetadata* CVideoBufferDRMPRIME::GetContentLightMetadata() const
+{
+  AVFrameSideData* sd = av_frame_get_side_data(m_pFrame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
+  return (sd && sd->data) ? reinterpret_cast<AVContentLightMetadata*>(sd->data) : nullptr;
+}
+
 bool CVideoBufferDRMPRIME::IsValid() const
 {
   AVDRMFrameDescriptor* descriptor = GetDescriptor();
