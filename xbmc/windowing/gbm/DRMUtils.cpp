@@ -774,6 +774,15 @@ uint32_t CDRMUtils::FourCCWithoutAlpha(uint32_t fourcc)
   return (fourcc & 0xFFFFFF00) | static_cast<uint32_t>('X');
 }
 
+enum hdmi_output_format {
+  HDMI_OUTPUT_DEFAULT_RGB,
+  HDMI_OUTPUT_YCBCR444,
+  HDMI_OUTPUT_YCBCR422,
+  HDMI_OUTPUT_YCBCR420,
+  HDMI_OUTPUT_YCBCR_HQ,
+  HDMI_OUTPUT_YCBCR_LQ,
+};
+
 int CDRMUtils::GetHdmiOutputFormat(bool videoLayer)
 {
   int outputFormat = 0;
@@ -781,7 +790,11 @@ int CDRMUtils::GetHdmiOutputFormat(bool videoLayer)
     outputFormat = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(SETTING_VIDEOPLAYER_HDMIOUTPUTFORMAT);
   if (outputFormat == 0)
     outputFormat = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(SETTING_VIDEOSCREEN_HDMIOUTPUTFORMAT);
-  return outputFormat;
+  if (outputFormat == 2)
+    return HDMI_OUTPUT_YCBCR_LQ;
+  if (outputFormat == 3)
+    return HDMI_OUTPUT_YCBCR_HQ;
+  return HDMI_OUTPUT_DEFAULT_RGB;
 }
 
 int CDRMUtils::GetHdmiQuantizationRange()
