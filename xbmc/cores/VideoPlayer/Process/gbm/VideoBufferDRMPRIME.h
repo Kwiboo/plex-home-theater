@@ -86,6 +86,10 @@ public:
   }
   int GetColorEncoding() const override;
   int GetColorRange() const override;
+  AVFrame* GetFrame() const
+  {
+    return m_pFrame;
+  }
 
   bool IsValid() const override;
 
