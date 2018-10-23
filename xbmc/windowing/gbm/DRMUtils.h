@@ -115,10 +115,12 @@ public:
 
   static const std::string SETTING_VIDEOSCREEN_HDMIOUTPUTFORMAT;
   static const std::string SETTING_VIDEOPLAYER_HDMIOUTPUTFORMAT;
+  static const std::string SETTING_VIDEOSCREEN_HDMIQUANTIZATIONRANGE;
   static const std::string SETTING_VIDEOSCREEN_HDMICONTENTTYPE;
   static const std::string SETTING_VIDEOPLAYER_HDMICONTENTTYPE;
 
   int GetHdmiOutputFormat(bool videoLayer);
+  int GetHdmiQuantizationRange();
   int GetHdmiContentType(bool videoLayer);
 
 protected:
