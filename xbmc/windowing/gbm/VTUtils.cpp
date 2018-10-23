@@ -23,7 +23,14 @@ using namespace KODI::WINDOWING::GBM;
 
 bool CVTUtils::OpenTTY()
 {
-  m_ttyDevice = ttyname(STDIN_FILENO);
+  char *ttyDevice = ttyname(STDIN_FILENO);
+  if (ttyDevice == nullptr)
+  {
+    CLog::Log(LOGWARNING, "CVTUtils::%s - failed to get tty name: %s", __FUNCTION__, strerror(errno));
+    return true;
+  }
+
+  m_ttyDevice = ttyDevice;
 
   m_fd.attach(open(m_ttyDevice.c_str(), O_RDWR | O_CLOEXEC));
   if (m_fd < 0)
