@@ -785,23 +785,22 @@ uint32_t CDRMUtils::FourCCWithoutAlpha(uint32_t fourcc)
   return (fourcc & 0xFFFFFF00) | static_cast<uint32_t>('X');
 }
 
-bool CDRMUtils::CheckConnector(int connector_id)
+bool CDRMUtils::CheckConnector(uint32_t connector_id)
 {
-  struct connector connectorcheck;
   unsigned retryCnt = 7;
 
-  connectorcheck.connector = drmModeGetConnector(m_fd, connector_id);
-  while (connectorcheck.connector->connection != DRM_MODE_CONNECTED  && retryCnt > 0)
+  drmModeConnectorPtr connector = drmModeGetConnector(m_fd, connector_id);
+  while (connector->connection != DRM_MODE_CONNECTED && retryCnt > 0)
   {
     CLog::Log(LOGDEBUG, "CDRMUtils::%s - connector is disconnected", __FUNCTION__);
     retryCnt--;
     Sleep(1000);
-    drmModeFreeConnector(connectorcheck.connector);
-    connectorcheck.connector = drmModeGetConnector(m_fd, connector_id);
+    drmModeFreeConnector(connector);
+    connector = drmModeGetConnector(m_fd, connector_id);
   }
 
-  int finalConnectionState = connectorcheck.connector->connection;
-  drmModeFreeConnector(connectorcheck.connector);
+  drmModeConnection connection = connector->connection;
+  drmModeFreeConnector(connector);
 
-  return finalConnectionState == DRM_MODE_CONNECTED;
+  return connection == DRM_MODE_CONNECTED;
 }

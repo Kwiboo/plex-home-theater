@@ -66,12 +66,6 @@ bool CWinSystemGbmGLContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res
     CreateNewWindow("", fullScreen, res);
   }
 
-  if (!m_eglContext.TrySwapBuffers())
-  {
-    CEGLUtils::LogError("eglSwapBuffers failed");
-    throw std::runtime_error("eglSwapBuffers failed");
-  }
-
   CWinSystemGbm::SetFullScreen(fullScreen, res, blankOtherDisplays);
   CRenderSystemGL::ResetRenderSystem(res.iWidth, res.iHeight);
 

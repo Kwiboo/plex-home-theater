@@ -53,13 +53,13 @@ bool CWinSystemGbmGLESContext::InitWindowSystem()
   }
 
   bool general, deepColor;
-  m_vaapiProxy.reset(GBM::VaapiProxyCreate(m_DRM->GetRenderNodeFileDescriptor()));
-  GBM::VaapiProxyConfig(m_vaapiProxy.get(), m_eglContext.GetEGLDisplay());
-  GBM::VAAPIRegisterRender(m_vaapiProxy.get(), general, deepColor);
+  m_vaapiProxy.reset(VaapiProxyCreate(m_DRM->GetRenderNodeFileDescriptor()));
+  VaapiProxyConfig(m_vaapiProxy.get(), m_eglContext.GetEGLDisplay());
+  VAAPIRegisterRender(m_vaapiProxy.get(), general, deepColor);
 
   if (general)
   {
-    GBM::VAAPIRegister(m_vaapiProxy.get(), deepColor);
+    VAAPIRegister(m_vaapiProxy.get(), deepColor);
   }
 
   CRendererDRMPRIMEGLES::Register();
@@ -76,12 +76,6 @@ bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& r
   {
     CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::%s - resolution changed, creating a new window", __FUNCTION__);
     CreateNewWindow("", fullScreen, res);
-  }
-
-  if (!m_eglContext.TrySwapBuffers())
-  {
-    CEGLUtils::LogError("eglSwapBuffers failed");
-    throw std::runtime_error("eglSwapBuffers failed");
   }
 
   CWinSystemGbm::SetFullScreen(fullScreen, res, blankOtherDisplays);
@@ -140,5 +134,6 @@ bool CWinSystemGbmGLESContext::CreateContext()
     CLog::Log(LOGERROR, "EGL context creation failed");
     return false;
   }
+
   return true;
 }

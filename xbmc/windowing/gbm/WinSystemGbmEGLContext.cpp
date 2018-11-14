@@ -97,6 +97,11 @@ bool CWinSystemGbmEGLContext::CreateNewWindow(const std::string& name,
     return false;
   }
 
+  if (!m_eglContext.SetVSync(false))
+  {
+    return false;
+  }
+
   m_bFullScreen = fullScreen;
   m_nWidth = res.iWidth;
   m_nHeight = res.iHeight;

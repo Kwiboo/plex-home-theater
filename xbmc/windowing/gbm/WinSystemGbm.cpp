@@ -28,10 +28,7 @@
 
 using namespace KODI::WINDOWING::GBM;
 
-CWinSystemGbm::CWinSystemGbm() :
-  m_DRM(nullptr),
-  m_GBM(new CGBMUtils),
-  m_libinput(new CLibInputHandler)
+CWinSystemGbm::CWinSystemGbm()
 {
   std::string envSink;
   if (getenv("KODI_AE_SINK"))
@@ -68,24 +65,19 @@ CWinSystemGbm::CWinSystemGbm() :
 
   CLinuxPowerSyscall::Register();
   m_lirc.reset(OPTIONALS::LircRegister());
-  m_libinput->Start();
 }
 
 bool CWinSystemGbm::InitWindowSystem()
 {
   m_DRM = std::make_shared<CDRMAtomic>();
-
   if (!m_DRM->InitDrm())
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize Atomic DRM", __FUNCTION__);
-    m_DRM.reset();
 
     m_DRM = std::make_shared<CDRMLegacy>();
-
     if (!m_DRM->InitDrm())
     {
       CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize Legacy DRM", __FUNCTION__);
-      m_DRM.reset();
 
       m_DRM = std::make_shared<COffScreenModeSetting>();
       if (!m_DRM->InitDrm())
@@ -97,11 +89,16 @@ bool CWinSystemGbm::InitWindowSystem()
     }
   }
 
+  m_GBM.reset(new CGBMUtils);
+
   if (!m_GBM->CreateDevice(m_DRM->GetFileDescriptor()))
   {
     m_GBM.reset();
     return false;
   }
+
+  m_libinput.reset(new CLibInputHandler);
+  m_libinput->Start();
 
   CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - initialized DRM", __FUNCTION__);
   return CWinSystemBase::InitWindowSystem();
@@ -109,12 +106,15 @@ bool CWinSystemGbm::InitWindowSystem()
 
 bool CWinSystemGbm::DestroyWindowSystem()
 {
+  CWinSystemBase::DestroyWindowSystem();
+
   m_GBM->DestroyDevice();
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
-
   m_libinput.reset();
+  m_GBM.reset();
+  m_DRM.reset();
 
+  CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
   return true;
 }
 
@@ -169,7 +169,7 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   // Notify other subsystems that we will change resolution
   OnLostDevice();
 
-  if(!m_DRM->SetMode(res))
+  if (!m_DRM->SetMode(res))
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to set DRM mode", __FUNCTION__);
     return false;
@@ -250,9 +250,7 @@ void CWinSystemGbm::Unregister(IDispResource *resource)
   CSingleLock lock(m_resourceSection);
   std::vector<IDispResource*>::iterator i = find(m_resources.begin(), m_resources.end(), resource);
   if (i != m_resources.end())
-  {
     m_resources.erase(i);
-  }
 }
 
 void CWinSystemGbm::OnLostDevice()

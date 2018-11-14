@@ -153,7 +153,7 @@ private:
   bool RestoreOriginalMode();
   static void DrmFbDestroyCallback(struct gbm_bo *bo, void *data);
   RESOLUTION_INFO GetResolutionInfo(drmModeModeInfoPtr mode);
-  bool CheckConnector(int connectorId);
+  bool CheckConnector(uint32_t connector_id);
 
   KODI::UTILS::POSIX::CFileHandle m_renderFd;
   int m_crtc_index;
