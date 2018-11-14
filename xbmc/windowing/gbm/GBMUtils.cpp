@@ -13,6 +13,7 @@ using namespace KODI::WINDOWING::GBM;
 
 bool CGBMUtils::CreateDevice(int fd)
 {
+  CLog::Log(LOGNOTICE, "CGBMUtils::{}", __FUNCTION__);
   if (m_device)
     CLog::Log(LOGWARNING, "CGBMUtils::%s - device already created", __FUNCTION__);
 
@@ -28,6 +29,7 @@ bool CGBMUtils::CreateDevice(int fd)
 
 void CGBMUtils::DestroyDevice()
 {
+  CLog::Log(LOGNOTICE, "CGBMUtils::{}", __FUNCTION__);
   if (!m_device)
     CLog::Log(LOGWARNING, "CGBMUtils::%s - device already destroyed", __FUNCTION__);
 
@@ -40,6 +42,7 @@ void CGBMUtils::DestroyDevice()
 
 bool CGBMUtils::CreateSurface(int width, int height, uint32_t format, const uint64_t *modifiers, const int modifiers_count)
 {
+  CLog::Log(LOGNOTICE, "CGBMUtils::{}", __FUNCTION__);
   if (m_surface)
     CLog::Log(LOGWARNING, "CGBMUtils::%s - surface already created", __FUNCTION__);
 
@@ -66,7 +69,7 @@ bool CGBMUtils::CreateSurface(int width, int height, uint32_t format, const uint
     return false;
   }
 
-  CLog::Log(LOGDEBUG, "CGBMUtils::%s - created surface with size %dx%d", __FUNCTION__,
+  CLog::Log(LOGNOTICE, "CGBMUtils::%s - created surface with size %dx%d", __FUNCTION__,
                                                                          width,
                                                                          height);
 
@@ -75,6 +78,7 @@ bool CGBMUtils::CreateSurface(int width, int height, uint32_t format, const uint
 
 void CGBMUtils::DestroySurface()
 {
+  CLog::Log(LOGNOTICE, "CGBMUtils::{}", __FUNCTION__);
   if (!m_surface)
     CLog::Log(LOGWARNING, "CGBMUtils::%s - surface already destroyed", __FUNCTION__);
 

@@ -36,6 +36,7 @@ CDRMUtils::CDRMUtils()
 
 bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
 {
+  CLog::Log(LOGNOTICE, "CDRMUtils::{}", __FUNCTION__);
   if (!CheckConnector(m_connector->connector->connector_id))
     return false;
 
@@ -43,13 +44,14 @@ bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
   m_width = res.iWidth;
   m_height = res.iHeight;
 
-  CLog::Log(LOGDEBUG, "CDRMUtils::%s - found crtc mode: %dx%d%s @ %d Hz",
+  CLog::Log(LOGNOTICE, "CDRMUtils::%s - found crtc mode: %dx%d%s @ %d Hz",
             __FUNCTION__,
             m_mode->hdisplay,
             m_mode->vdisplay,
             m_mode->flags & DRM_MODE_FLAG_INTERLACE ? "i" : "",
             m_mode->vrefresh);
 
+  CLog::Log(LOGNOTICE, "CDRMUtils::{} - done", __FUNCTION__);
   return true;
 }
 
@@ -59,7 +61,7 @@ void CDRMUtils::DrmFbDestroyCallback(struct gbm_bo *bo, void *data)
 
   if (fb->fb_id > 0)
   {
-    CLog::Log(LOGDEBUG, "CDRMUtils::%s - removing framebuffer: %d", __FUNCTION__, fb->fb_id);
+    CLog::Log(LOGNOTICE, "CDRMUtils::%s - removing framebuffer: %d", __FUNCTION__, fb->fb_id);
     int drm_fd = gbm_device_get_fd(gbm_bo_get_device(bo));
     drmModeRmFB(drm_fd, fb->fb_id);
   }
@@ -787,6 +789,7 @@ uint32_t CDRMUtils::FourCCWithoutAlpha(uint32_t fourcc)
 
 bool CDRMUtils::CheckConnector(uint32_t connector_id)
 {
+  CLog::Log(LOGNOTICE, "CDRMUtils::{}", __FUNCTION__);
   unsigned retryCnt = 7;
 
   drmModeConnectorPtr connector = drmModeGetConnector(m_fd, connector_id);
@@ -802,5 +805,6 @@ bool CDRMUtils::CheckConnector(uint32_t connector_id)
   drmModeConnection connection = connector->connection;
   drmModeFreeConnector(connector);
 
+  CLog::Log(LOGNOTICE, "CDRMUtils::{} - done", __FUNCTION__);
   return connection == DRM_MODE_CONNECTED;
 }

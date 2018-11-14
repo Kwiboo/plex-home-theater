@@ -137,6 +137,7 @@ CEGLContextUtils::~CEGLContextUtils()
 
 bool CEGLContextUtils::CreateDisplay(EGLNativeDisplayType nativeDisplay)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay != EGL_NO_DISPLAY)
   {
     throw std::logic_error("Do not call CreateDisplay when display has already been created");
@@ -154,6 +155,7 @@ bool CEGLContextUtils::CreateDisplay(EGLNativeDisplayType nativeDisplay)
 
 bool CEGLContextUtils::CreatePlatformDisplay(void* nativeDisplay, EGLNativeDisplayType nativeDisplayLegacy)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay != EGL_NO_DISPLAY)
   {
     throw std::logic_error("Do not call CreateDisplay when display has already been created");
@@ -188,6 +190,7 @@ bool CEGLContextUtils::CreatePlatformDisplay(void* nativeDisplay, EGLNativeDispl
 
 bool CEGLContextUtils::InitializeDisplay(EGLint renderingApi)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (!eglInitialize(m_eglDisplay, nullptr, nullptr))
   {
     CEGLUtils::LogError("failed to initialize EGL display");
@@ -220,6 +223,7 @@ bool CEGLContextUtils::InitializeDisplay(EGLint renderingApi)
 
 bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{} - visualId={}", __FUNCTION__, visualId);
   EGLint numMatched{0};
 
   if (m_eglDisplay == EGL_NO_DISPLAY)
@@ -308,6 +312,7 @@ EGLint CEGLContextUtils::GetConfigAttrib(EGLint attribute) const
 
 bool CEGLContextUtils::CreateContext(CEGLAttributesVec contextAttribs)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglContext != EGL_NO_CONTEXT)
   {
     throw std::logic_error("Do not call CreateContext when context has already been created");
@@ -347,6 +352,7 @@ bool CEGLContextUtils::CreateContext(CEGLAttributesVec contextAttribs)
 
 bool CEGLContextUtils::BindContext()
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE || m_eglContext == EGL_NO_CONTEXT)
   {
     throw std::logic_error("Activating an EGLContext requires display, surface, and context");
@@ -364,6 +370,7 @@ bool CEGLContextUtils::BindContext()
 
 void CEGLContextUtils::SurfaceAttrib()
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE)
   {
     throw std::logic_error("Setting surface attributes requires a surface");
@@ -383,6 +390,7 @@ void CEGLContextUtils::SurfaceAttrib()
 
 bool CEGLContextUtils::CreateSurface(EGLNativeWindowType nativeWindow)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay == EGL_NO_DISPLAY)
   {
     throw std::logic_error("Creating a surface requires a display");
@@ -407,6 +415,7 @@ bool CEGLContextUtils::CreateSurface(EGLNativeWindowType nativeWindow)
 
 bool CEGLContextUtils::CreatePlatformSurface(void* nativeWindow, EGLNativeWindowType nativeWindowLegacy)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay == EGL_NO_DISPLAY)
   {
     throw std::logic_error("Creating a surface requires a display");
@@ -442,6 +451,7 @@ bool CEGLContextUtils::CreatePlatformSurface(void* nativeWindow, EGLNativeWindow
 
 void CEGLContextUtils::Destroy()
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   DestroyContext();
   DestroySurface();
 
@@ -454,6 +464,7 @@ void CEGLContextUtils::Destroy()
 
 void CEGLContextUtils::DestroyContext()
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglContext != EGL_NO_CONTEXT)
   {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -464,6 +475,7 @@ void CEGLContextUtils::DestroyContext()
 
 void CEGLContextUtils::DestroySurface()
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglSurface != EGL_NO_SURFACE)
   {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -472,9 +484,9 @@ void CEGLContextUtils::DestroySurface()
   }
 }
 
-
 bool CEGLContextUtils::SetVSync(bool enable)
 {
+  CLog::Log(LOGNOTICE, "CEGLContextUtils::{}", __FUNCTION__);
   if (m_eglDisplay == EGL_NO_DISPLAY)
   {
     return false;

@@ -17,6 +17,7 @@ using namespace KODI::WINDOWING::GBM;
 
 bool CWinSystemGbmEGLContext::InitWindowSystemEGL(EGLint renderableType, EGLint apiType)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{}", __FUNCTION__);
   if (!CWinSystemGbm::InitWindowSystem())
   {
     return false;
@@ -61,6 +62,7 @@ bool CWinSystemGbmEGLContext::CreateNewWindow(const std::string& name,
                                               bool fullScreen,
                                               RESOLUTION_INFO& res)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{}", __FUNCTION__);
   //Notify other subsystems that we change resolution
   OnLostDevice();
 
@@ -107,21 +109,23 @@ bool CWinSystemGbmEGLContext::CreateNewWindow(const std::string& name,
   m_nHeight = res.iHeight;
   m_fRefreshRate = res.fRefreshRate;
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbmEGLContext::{} - initialized GBM", __FUNCTION__);
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{} - initialized GBM", __FUNCTION__);
   return true;
 }
 
 bool CWinSystemGbmEGLContext::DestroyWindow()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{}", __FUNCTION__);
   m_eglContext.DestroySurface();
   m_GBM->DestroySurface();
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbmEGLContext::{} - deinitialized GBM", __FUNCTION__);
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{} - deinitialized GBM", __FUNCTION__);
   return true;
 }
 
 bool CWinSystemGbmEGLContext::DestroyWindowSystem()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{}", __FUNCTION__);
   CDVDFactoryCodec::ClearHWAccels();
   VIDEOPLAYER::CRendererFactory::ClearRenderer();
   m_eglContext.Destroy();

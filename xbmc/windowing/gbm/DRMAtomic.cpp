@@ -29,6 +29,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
 
   if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
   {
+    CLog::Log(LOGNOTICE, "CDRMAtomic::{} - modeset", __FUNCTION__);
     if (!AddProperty(m_connector, "CRTC_ID", m_crtc->crtc->crtc_id))
     {
       return;
@@ -117,6 +118,7 @@ void CDRMAtomic::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
 
   if (m_need_modeset)
   {
+    CLog::Log(LOGNOTICE, "CDRMAtomic::{} - need modeset", __FUNCTION__);
     flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
     m_need_modeset = false;
   }
@@ -126,6 +128,7 @@ void CDRMAtomic::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
 
 bool CDRMAtomic::InitDrm()
 {
+  CLog::Log(LOGNOTICE, "CDRMAtomic::{}", __FUNCTION__);
   if (!CDRMUtils::OpenDrm(true))
   {
     return false;
@@ -150,12 +153,13 @@ bool CDRMAtomic::InitDrm()
     CLog::Log(LOGDEBUG, "CDRMAtomic::%s - failed to reset planes", __FUNCTION__);
   }
 
-  CLog::Log(LOGDEBUG, "CDRMAtomic::%s - initialized atomic DRM", __FUNCTION__);
+  CLog::Log(LOGNOTICE, "CDRMAtomic::%s - initialized atomic DRM", __FUNCTION__);
   return true;
 }
 
 void CDRMAtomic::DestroyDrm()
 {
+  CLog::Log(LOGNOTICE, "CDRMAtomic::{}", __FUNCTION__);
   CDRMUtils::DestroyDrm();
 
   drmModeAtomicFree(m_req);
@@ -164,6 +168,7 @@ void CDRMAtomic::DestroyDrm()
 
 bool CDRMAtomic::SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo)
 {
+  CLog::Log(LOGNOTICE, "CDRMAtomic::{}", __FUNCTION__);
   m_need_modeset = true;
 
   return true;
@@ -171,6 +176,7 @@ bool CDRMAtomic::SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo)
 
 bool CDRMAtomic::SetActive(bool active)
 {
+  CLog::Log(LOGNOTICE, "CDRMAtomic::{}", __FUNCTION__);
   m_need_modeset = true;
   m_active = active;
 

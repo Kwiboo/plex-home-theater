@@ -40,6 +40,7 @@ std::unique_ptr<CWinSystemBase> CWinSystemBase::CreateWinSystem()
 
 bool CWinSystemGbmGLESContext::InitWindowSystem()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmGLESContext::{}", __FUNCTION__);
   VIDEOPLAYER::CRendererFactory::ClearRenderer();
   CDVDFactoryCodec::ClearHWAccels();
   CLinuxRendererGLES::Register();
@@ -71,10 +72,11 @@ bool CWinSystemGbmGLESContext::InitWindowSystem()
 
 bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmGLESContext::{}", __FUNCTION__);
   if (res.iWidth != m_nWidth ||
       res.iHeight != m_nHeight)
   {
-    CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::%s - resolution changed, creating a new window", __FUNCTION__);
+    CLog::Log(LOGNOTICE, "CWinSystemGbmGLESContext::%s - resolution changed, creating a new window", __FUNCTION__);
     CreateNewWindow("", fullScreen, res);
   }
 
@@ -126,6 +128,7 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
 
 bool CWinSystemGbmGLESContext::CreateContext()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbmGLESContext::{}", __FUNCTION__);
   CEGLAttributesVec contextAttribs;
   contextAttribs.Add({{EGL_CONTEXT_CLIENT_VERSION, 2}});
 

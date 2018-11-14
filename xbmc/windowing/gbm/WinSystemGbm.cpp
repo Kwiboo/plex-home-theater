@@ -69,6 +69,7 @@ CWinSystemGbm::CWinSystemGbm()
 
 bool CWinSystemGbm::InitWindowSystem()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   m_DRM = std::make_shared<CDRMAtomic>();
   if (!m_DRM->InitDrm())
   {
@@ -100,12 +101,13 @@ bool CWinSystemGbm::InitWindowSystem()
   m_libinput.reset(new CLibInputHandler);
   m_libinput->Start();
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - initialized DRM", __FUNCTION__);
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::%s - initialized DRM", __FUNCTION__);
   return CWinSystemBase::InitWindowSystem();
 }
 
 bool CWinSystemGbm::DestroyWindowSystem()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   CWinSystemBase::DestroyWindowSystem();
 
   m_GBM->DestroyDevice();
@@ -114,12 +116,13 @@ bool CWinSystemGbm::DestroyWindowSystem()
   m_GBM.reset();
   m_DRM.reset();
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
   return true;
 }
 
 void CWinSystemGbm::UpdateResolutions()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   RESOLUTION_INFO current = m_DRM->GetCurrentMode();
 
   auto resolutions = m_DRM->GetModes();
@@ -161,11 +164,13 @@ void CWinSystemGbm::UpdateResolutions()
 
 bool CWinSystemGbm::ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   return true;
 }
 
 bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   // Notify other subsystems that we will change resolution
   OnLostDevice();
 
@@ -241,12 +246,14 @@ bool CWinSystemGbm::Show(bool raise)
 
 void CWinSystemGbm::Register(IDispResource *resource)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   CSingleLock lock(m_resourceSection);
   m_resources.push_back(resource);
 }
 
 void CWinSystemGbm::Unregister(IDispResource *resource)
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   CSingleLock lock(m_resourceSection);
   std::vector<IDispResource*>::iterator i = find(m_resources.begin(), m_resources.end(), resource);
   if (i != m_resources.end())
@@ -255,9 +262,11 @@ void CWinSystemGbm::Unregister(IDispResource *resource)
 
 void CWinSystemGbm::OnLostDevice()
 {
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
   CLog::Log(LOGDEBUG, "%s - notify display change event", __FUNCTION__);
 
   CSingleLock lock(m_resourceSection);
   for (auto resource : m_resources)
     resource->OnLostDisplay();
+  CLog::Log(LOGNOTICE, "CWinSystemGbm::{} - done", __FUNCTION__);
 }
