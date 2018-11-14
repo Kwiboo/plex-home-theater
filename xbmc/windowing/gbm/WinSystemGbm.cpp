@@ -171,9 +171,6 @@ bool CWinSystemGbm::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
 bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
   CLog::Log(LOGNOTICE, "CWinSystemGbm::{}", __FUNCTION__);
-  // Notify other subsystems that we will change resolution
-  OnLostDevice();
-
   if (!m_DRM->SetMode(res))
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to set DRM mode", __FUNCTION__);
@@ -192,13 +189,6 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   if (!std::dynamic_pointer_cast<CDRMAtomic>(m_DRM))
   {
     m_GBM->ReleaseBuffer();
-  }
-
-  int delay = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt("videoscreen.delayrefreshchange");
-  if (delay > 0)
-  {
-    m_delayDispReset = true;
-    m_dispResetTimer.Set(delay * 100);
   }
 
   return result;

@@ -83,14 +83,6 @@ bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& r
   CWinSystemGbm::SetFullScreen(fullScreen, res, blankOtherDisplays);
   CRenderSystemGLES::ResetRenderSystem(res.iWidth, res.iHeight);
 
-  if (!m_delayDispReset)
-  {
-    CSingleLock lock(m_resourceSection);
-
-    for (auto resource : m_resources)
-      resource->OnResetDisplay();
-  }
-
   return true;
 }
 
@@ -114,15 +106,6 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
   else
   {
     Sleep(10);
-  }
-
-  if (m_delayDispReset && m_dispResetTimer.IsTimePast())
-  {
-    m_delayDispReset = false;
-    CSingleLock lock(m_resourceSection);
-
-    for (auto resource : m_resources)
-      resource->OnResetDisplay();
   }
 }
 

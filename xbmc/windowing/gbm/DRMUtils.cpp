@@ -37,9 +37,6 @@ CDRMUtils::CDRMUtils()
 bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
 {
   CLog::Log(LOGNOTICE, "CDRMUtils::{}", __FUNCTION__);
-  if (!CheckConnector(m_connector->connector->connector_id))
-    return false;
-
   m_mode = &m_connector->connector->modes[atoi(res.strId.c_str())];
   m_width = res.iWidth;
   m_height = res.iHeight;

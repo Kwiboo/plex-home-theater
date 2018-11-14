@@ -63,9 +63,6 @@ bool CWinSystemGbmEGLContext::CreateNewWindow(const std::string& name,
                                               RESOLUTION_INFO& res)
 {
   CLog::Log(LOGNOTICE, "CWinSystemGbmEGLContext::{}", __FUNCTION__);
-  //Notify other subsystems that we change resolution
-  OnLostDevice();
-
   if (!DestroyWindow())
   {
     return false;
