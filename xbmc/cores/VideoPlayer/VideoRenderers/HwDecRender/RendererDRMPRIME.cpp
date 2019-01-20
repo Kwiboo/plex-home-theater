@@ -24,9 +24,247 @@
 #include "windowing/GraphicContext.h"
 #include "ServiceBroker.h"
 
+#include <sys/mman.h>
+
 using namespace KODI::WINDOWING::GBM;
 
 const std::string SETTING_VIDEOPLAYER_USEPRIMERENDERER = "videoplayer.useprimerenderer";
+
+//------------------------------------------------------------------------------
+// Video Buffers
+//------------------------------------------------------------------------------
+
+class CVideoBufferDumb
+  : public CVideoBufferDRMPRIME
+{
+public:
+  CVideoBufferDumb(IVideoBufferPool& pool, int id);
+  ~CVideoBufferDumb();
+  void SetRef(const VideoPicture& picture);
+  void Unref();
+private:
+  void Create(uint32_t width, uint32_t height);
+  void Destroy();
+
+  AVDRMFrameDescriptor m_descriptor = {};
+  CVideoBuffer* m_buffer = nullptr;
+  uint32_t m_width = 0;
+  uint32_t m_height = 0;
+  uint32_t m_handle = 0;
+  uint64_t m_size = 0;
+  uint64_t m_offset = 0;
+  void *m_addr = nullptr;
+  int m_fd = -1;
+};
+
+CVideoBufferDumb::CVideoBufferDumb(IVideoBufferPool& pool, int id)
+  : CVideoBufferDRMPRIME(pool, id)
+{
+}
+
+CVideoBufferDumb::~CVideoBufferDumb()
+{
+  Unref();
+  Destroy();
+}
+
+void CVideoBufferDumb::Create(uint32_t width, uint32_t height)
+{
+  if (m_width == width && m_height == height)
+    return;
+
+  Destroy();
+
+  CLog::Log(LOGNOTICE, "CVideoBufferDumb::{} - id={} width={} height={}", __FUNCTION__, m_id, width, height);
+
+  CWinSystemGbm* winSystem = dynamic_cast<CWinSystemGbm*>(CServiceBroker::GetWinSystem());
+  int fd = winSystem->GetDrm()->GetFileDescriptor();
+
+  struct drm_mode_create_dumb create_dumb = { .height = height + (height / 2), .width = width, .bpp = 8 };
+  int ret = drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create_dumb);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DRM_IOCTL_MODE_CREATE_DUMB failed, ret={} errno={}", __FUNCTION__, ret, errno);
+  m_handle = create_dumb.handle;
+  m_size = create_dumb.size;
+
+  struct drm_mode_map_dumb map_dumb = { .handle = m_handle };
+  ret = drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map_dumb);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DRM_IOCTL_MODE_MAP_DUMB failed, ret={} errno={}", __FUNCTION__, ret, errno);
+  m_offset = map_dumb.offset;
+
+  m_addr = mmap(NULL, m_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, m_offset);
+  if (m_addr == MAP_FAILED)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - mmap failed, errno={}", __FUNCTION__, errno);
+
+  struct drm_prime_handle prime_handle = { .handle = m_handle };
+  ret = drmIoctl(fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &prime_handle);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DRM_IOCTL_PRIME_HANDLE_TO_FD failed, ret={} errno={}", __FUNCTION__, ret, errno);
+  m_fd = prime_handle.fd;
+
+  m_width = width;
+  m_height = height;
+
+  AVDRMFrameDescriptor* descriptor = &m_descriptor;
+  descriptor->nb_objects = 1;
+  descriptor->objects[0].fd = m_fd;
+  descriptor->objects[0].size = m_size;
+  descriptor->nb_layers = 1;
+  AVDRMLayerDescriptor* layer = &descriptor->layers[0];
+  layer->format = DRM_FORMAT_NV12;
+  layer->nb_planes = 2;
+  layer->planes[0].offset = 0;
+  layer->planes[0].pitch = m_width;
+  layer->planes[1].offset = m_width * m_height;
+  layer->planes[1].pitch = m_width;
+
+  m_pFrame->data[0] = reinterpret_cast<uint8_t*>(descriptor);
+}
+
+void CVideoBufferDumb::Destroy()
+{
+  if (!m_width && !m_height)
+    return;
+
+  CLog::Log(LOGNOTICE, "CVideoBufferDumb::{} - id={} width={} height={} size={}", __FUNCTION__, m_id, m_width, m_height, m_size);
+
+  CWinSystemGbm* winSystem = dynamic_cast<CWinSystemGbm*>(CServiceBroker::GetWinSystem());
+
+  int ret = close(m_fd);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - close failed, errno={}", __FUNCTION__, errno);
+  m_fd = -1;
+
+  ret = munmap(m_addr, m_size);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - munmap failed, errno={}", __FUNCTION__, errno);
+  m_addr = nullptr;
+  m_offset = 0;
+  m_size = 0;
+
+  struct drm_mode_destroy_dumb destroy_dumb = { .handle = m_handle };
+  ret = drmIoctl(winSystem->GetDrm()->GetFileDescriptor(), DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_dumb);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DRM_IOCTL_MODE_DESTROY_DUMB failed, ret={} errno={}", __FUNCTION__, ret, errno);
+  m_handle = 0;
+
+  m_width = 0;
+  m_height = 0;
+}
+
+void CVideoBufferDumb::SetRef(const VideoPicture& picture)
+{
+  m_buffer = picture.videoBuffer;
+  m_buffer->Acquire();
+
+  m_pFrame->width = picture.iWidth;
+  m_pFrame->height = picture.iHeight;
+  m_pFrame->color_range = picture.color_range ? AVCOL_RANGE_JPEG : AVCOL_RANGE_UNSPECIFIED;
+  m_pFrame->color_primaries = static_cast<AVColorPrimaries>(picture.color_primaries);
+  m_pFrame->color_trc = static_cast<AVColorTransferCharacteristic>(picture.color_transfer);
+  m_pFrame->colorspace = static_cast<AVColorSpace>(picture.color_space);
+
+  YuvImage image = {};
+  m_buffer->GetPlanes(image.plane);
+  m_buffer->GetStrides(image.stride);
+
+  Create(image.stride[0], (picture.iHeight + 15) & -16);
+
+  memcpy(m_addr, image.plane[0], image.stride[0] * picture.iHeight);
+  uint8_t* offset = static_cast<uint8_t*>(m_addr) + m_width * m_height;
+  for (int y = 0, h = picture.iHeight / 2; y < h; y++)
+  {
+    uint8_t* dst = offset + m_width * y;
+    uint8_t* src1 = image.plane[1] + image.stride[1] * y;
+    uint8_t* src2 = image.plane[2] + image.stride[2] * y;
+
+    for (int x = 0, w = image.stride[1]; x < w; x++)
+    {
+      *dst++ = *(src1 + x);
+      *dst++ = *(src2 + x);
+    }
+  }
+}
+
+void CVideoBufferDumb::Unref()
+{
+  if (!m_buffer)
+    return;
+
+  m_buffer->Release();
+  m_buffer = nullptr;
+}
+
+//------------------------------------------------------------------------------
+
+class CVideoBufferPoolDumb
+  : public IVideoBufferPool
+{
+public:
+  ~CVideoBufferPoolDumb();
+  void Return(int id) override;
+  CVideoBuffer* Get() override;
+
+protected:
+  CCriticalSection m_critSection;
+  std::vector<CVideoBufferDumb*> m_all;
+  std::deque<int> m_used;
+  std::deque<int> m_free;
+};
+
+CVideoBufferPoolDumb::~CVideoBufferPoolDumb()
+{
+  for (auto buf : m_all)
+    delete buf;
+}
+
+CVideoBuffer* CVideoBufferPoolDumb::Get()
+{
+  CSingleLock lock(m_critSection);
+
+  CVideoBufferDumb* buf = nullptr;
+  if (!m_free.empty())
+  {
+    int idx = m_free.front();
+    m_free.pop_front();
+    m_used.push_back(idx);
+    buf = m_all[idx];
+  }
+  else
+  {
+    int id = m_all.size();
+    buf = new CVideoBufferDumb(*this, id);
+    m_all.push_back(buf);
+    m_used.push_back(id);
+  }
+
+  buf->Acquire(GetPtr());
+  return buf;
+}
+
+void CVideoBufferPoolDumb::Return(int id)
+{
+  CSingleLock lock(m_critSection);
+
+  m_all[id]->Unref();
+  auto it = m_used.begin();
+  while (it != m_used.end())
+  {
+    if (*it == id)
+    {
+      m_used.erase(it);
+      break;
+    }
+    else
+      ++it;
+  }
+  m_free.push_back(id);
+}
+
+//------------------------------------------------------------------------------
+// main class
+//------------------------------------------------------------------------------
 
 CRendererDRMPRIME::~CRendererDRMPRIME()
 {
@@ -35,7 +273,7 @@ CRendererDRMPRIME::~CRendererDRMPRIME()
 
 CBaseRenderer* CRendererDRMPRIME::Create(CVideoBuffer* buffer)
 {
-  if (buffer && dynamic_cast<CVideoBufferDRMPRIME*>(buffer) &&
+  if (buffer && (dynamic_cast<CVideoBufferDRMPRIME*>(buffer) || buffer->GetFormat() == AV_PIX_FMT_YUV420P) &&
       CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(SETTING_VIDEOPLAYER_USEPRIMERENDERER) == 0)
   {
     CWinSystemGbm* winSystem = dynamic_cast<CWinSystemGbm*>(CServiceBroker::GetWinSystem());
@@ -88,6 +326,8 @@ bool CRendererDRMPRIME::Configure(const VideoPicture& picture, float fps, unsign
 
   Flush(false);
 
+  m_videoBufferPool = std::make_shared<CVideoBufferPoolDumb>();
+
   m_bConfigured = true;
   return true;
 }
@@ -114,8 +354,17 @@ void CRendererDRMPRIME::AddVideoPicture(const VideoPicture& picture, int index)
     CLog::LogF(LOGERROR, "unreleased video buffer");
     buf.videoBuffer->Release();
   }
-  buf.videoBuffer = picture.videoBuffer;
-  buf.videoBuffer->Acquire();
+  if (dynamic_cast<CVideoBufferDRMPRIME*>(picture.videoBuffer))
+  {
+    buf.videoBuffer = picture.videoBuffer;
+    buf.videoBuffer->Acquire();
+  }
+  else
+  {
+    CVideoBufferDumb* buffer = dynamic_cast<CVideoBufferDumb*>(m_videoBufferPool->Get());
+    buffer->SetRef(picture);
+    buf.videoBuffer = buffer;
+  }
 }
 
 bool CRendererDRMPRIME::Flush(bool saveBuffers)

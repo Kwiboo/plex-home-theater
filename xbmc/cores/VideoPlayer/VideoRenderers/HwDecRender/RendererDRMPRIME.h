@@ -12,6 +12,7 @@
 
 class CVideoBuffer;
 class CVideoLayerBridgeDRMPRIME;
+class CVideoBufferPoolDumb;
 
 class CRendererDRMPRIME
   : public CBaseRenderer
@@ -51,6 +52,7 @@ private:
   bool m_bConfigured = false;
   int m_iLastRenderBuffer = -1;
 
+  std::shared_ptr<CVideoBufferPoolDumb> m_videoBufferPool;
   std::shared_ptr<CVideoLayerBridgeDRMPRIME> m_videoLayerBridge;
 
   struct BUFFER
