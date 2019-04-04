@@ -15,6 +15,7 @@
 #include "settings/SettingsComponent.h"
 #include "settings/lib/Setting.h"
 #include "threads/SingleLock.h"
+#include "utils/CPUInfo.h"
 #include "utils/log.h"
 #include "windowing/gbm/WinSystemGbm.h"
 
@@ -90,11 +91,29 @@ static const AVCodec* FindDecoder(CDVDStreamInfo& hints)
   return nullptr;
 }
 
-static enum AVPixelFormat GetFormat(struct AVCodecContext* avctx, const enum AVPixelFormat* fmt)
+enum AVPixelFormat CDVDVideoCodecDRMPRIME::GetFormat(struct AVCodecContext* avctx, const enum AVPixelFormat* fmt)
 {
   for (int n = 0; fmt[n] != AV_PIX_FMT_NONE; n++)
+  {
     if (fmt[n] == AV_PIX_FMT_DRM_PRIME)
+    {
+      CDVDVideoCodecDRMPRIME* ctx = static_cast<CDVDVideoCodecDRMPRIME*>(avctx->opaque);
+
+      const char* pixFmtName = av_get_pix_fmt_name(fmt[n]);
+      ctx->m_processInfo.SetVideoPixelFormat(pixFmtName ? pixFmtName : "");
+      ctx->m_processInfo.SetVideoDimensions(avctx->coded_width, avctx->coded_height);
+
+      if (avctx->codec->name)
+        ctx->m_name = std::string("ff-") + avctx->codec->name;
+      else
+        ctx->m_name = "ffmpeg";
+
+      ctx->m_processInfo.SetVideoDecoderName(ctx->m_name, true);
+
+      CLog::Log(LOGDEBUG, "CDVDVideoCodecDRMPRIME::{} - decoder:{} format:{}", __FUNCTION__, ctx->m_name, pixFmtName);
       return fmt[n];
+    }
+  }
 
   return AV_PIX_FMT_NONE;
 }
@@ -129,6 +148,7 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   }
 
   m_pCodecContext->pix_fmt = AV_PIX_FMT_DRM_PRIME;
+  m_pCodecContext->opaque = static_cast<void*>(this);
   m_pCodecContext->get_format = GetFormat;
   m_pCodecContext->codec_tag = hints.codec_tag;
   m_pCodecContext->coded_width = hints.width;
@@ -136,6 +156,8 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   m_pCodecContext->bits_per_coded_sample = hints.bitsperpixel;
   m_pCodecContext->time_base.num = 1;
   m_pCodecContext->time_base.den = DVD_TIME_BASE;
+  m_pCodecContext->thread_safe_callbacks = 1;
+  m_pCodecContext->thread_count = g_cpuInfo.getCPUCount();
 
   if (hints.extradata && hints.extrasize > 0)
   {
@@ -151,21 +173,14 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
     return false;
   }
 
-  if (m_pCodecContext->pix_fmt != AV_PIX_FMT_DRM_PRIME)
-  {
-    CLog::Log(LOGNOTICE, "CDVDVideoCodecDRMPRIME::%s - unexpected pix fmt %s", __FUNCTION__, av_get_pix_fmt_name(m_pCodecContext->pix_fmt));
-    avcodec_free_context(&m_pCodecContext);
-    return false;
-  }
-
   const char* pixFmtName = av_get_pix_fmt_name(m_pCodecContext->pix_fmt);
   m_processInfo.SetVideoPixelFormat(pixFmtName ? pixFmtName : "");
-  m_processInfo.SetVideoDimensions(hints.width, hints.height);
+  m_processInfo.SetVideoDimensions(m_pCodecContext->coded_width, m_pCodecContext->coded_height);
   m_processInfo.SetVideoDeintMethod("none");
   m_processInfo.SetVideoDAR(hints.aspect);
 
-  if (pCodec->name)
-    m_name = std::string("ff-") + pCodec->name;
+  if (m_pCodecContext->codec->name)
+    m_name = std::string("ff-") + m_pCodecContext->codec->name;
   else
     m_name = "ffmpeg";
 
@@ -282,9 +297,18 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
 
   SetPictureParams(pVideoPicture);
 
-  CVideoBufferDRMPRIME* buffer = dynamic_cast<CVideoBufferDRMPRIME*>(m_videoBufferPool->Get());
-  buffer->SetRef(m_pFrame);
-  pVideoPicture->videoBuffer = buffer;
+  if (m_pFrame->format == AV_PIX_FMT_DRM_PRIME)
+  {
+    CVideoBufferDRMPRIME* buffer = dynamic_cast<CVideoBufferDRMPRIME*>(m_videoBufferPool->Get());
+    buffer->SetRef(m_pFrame);
+    pVideoPicture->videoBuffer = buffer;
+  }
+
+  if (!pVideoPicture->videoBuffer)
+  {
+    CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - videoBuffer:nullptr format:{}", __FUNCTION__, av_get_pix_fmt_name(static_cast<AVPixelFormat>(m_pFrame->format)));
+    return VC_ERROR;
+  }
 
   return VC_PICTURE;
 }
