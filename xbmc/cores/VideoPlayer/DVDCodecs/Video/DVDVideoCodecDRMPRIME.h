@@ -35,10 +35,12 @@ protected:
   void Drain();
   void SetPictureParams(VideoPicture* pVideoPicture);
   static enum AVPixelFormat GetFormat(struct AVCodecContext* avctx, const enum AVPixelFormat* fmt);
+  static int GetBuffer(struct AVCodecContext* avctx, AVFrame* frame, int flags);
 
   std::string m_name;
   int m_codecControlFlags = 0;
   AVCodecContext* m_pCodecContext = nullptr;
   AVFrame* m_pFrame = nullptr;
   std::shared_ptr<IVideoBufferPool> m_videoBufferPool;
+  std::shared_ptr<IVideoBufferPool> m_videoBufferPoolDumb;
 };
