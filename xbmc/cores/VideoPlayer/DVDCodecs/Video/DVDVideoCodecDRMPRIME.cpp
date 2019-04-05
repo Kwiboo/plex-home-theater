@@ -11,7 +11,7 @@
 #include "ServiceBroker.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.h"
 #include "cores/VideoPlayer/Process/gbm/VideoBufferDRMPRIME.h"
-#include "cores/VideoPlayer/Process/gbm/VideoBufferDumb.h"
+#include "cores/VideoPlayer/Process/gbm/VideoBufferMemfd.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 #include "settings/lib/Setting.h"
@@ -25,7 +25,7 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
-#define DUMB_BUFFER_EXPORT 0
+#define DUMB_BUFFER_EXPORT 1
 
 using namespace KODI::WINDOWING::GBM;
 
@@ -34,7 +34,7 @@ CDVDVideoCodecDRMPRIME::CDVDVideoCodecDRMPRIME(CProcessInfo& processInfo)
 {
   m_pFrame = av_frame_alloc();
   m_videoBufferPool = std::make_shared<CVideoBufferPoolDRMPRIME>();
-  m_videoBufferPoolDumb = std::make_shared<CVideoBufferPoolDumb>();
+  m_videoBufferPoolDumb = std::make_shared<CVideoBufferPoolMemfd>();
 }
 
 CDVDVideoCodecDRMPRIME::~CDVDVideoCodecDRMPRIME()
@@ -129,7 +129,7 @@ enum AVPixelFormat CDVDVideoCodecDRMPRIME::GetFormat(struct AVCodecContext* avct
 
 static void ReleaseBuffer(void* opaque, uint8_t* data)
 {
-  CVideoBufferDumb* buffer = static_cast<CVideoBufferDumb*>(opaque);
+  CVideoBufferMemfd* buffer = static_cast<CVideoBufferMemfd*>(opaque);
   CLog::Log(LOGDEBUG, "CDVDVideoCodecDRMPRIME::{} - buffer:{}", __FUNCTION__, buffer->GetId());
   buffer->Release();
 }
@@ -141,7 +141,7 @@ int CDVDVideoCodecDRMPRIME::GetBuffer(struct AVCodecContext* avctx, AVFrame* fra
   if (frame->format == AV_PIX_FMT_YUV420P)
   {
     CDVDVideoCodecDRMPRIME* ctx = static_cast<CDVDVideoCodecDRMPRIME*>(avctx->opaque);
-    CVideoBufferDumb* buffer = dynamic_cast<CVideoBufferDumb*>(ctx->m_videoBufferPoolDumb->Get());
+    CVideoBufferMemfd* buffer = dynamic_cast<CVideoBufferMemfd*>(ctx->m_videoBufferPoolDumb->Get());
 
     buffer->Alloc(avctx, frame);
 
@@ -345,7 +345,7 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
   }
   else if (m_pFrame->opaque)
   {
-    CVideoBufferDumb* buffer = static_cast<CVideoBufferDumb*>(m_pFrame->opaque);
+    CVideoBufferMemfd* buffer = static_cast<CVideoBufferMemfd*>(m_pFrame->opaque);
     buffer->Acquire();
     buffer->SetRef(pVideoPicture);
 #if !DUMB_BUFFER_EXPORT
