@@ -42,5 +42,5 @@ protected:
   AVCodecContext* m_pCodecContext = nullptr;
   AVFrame* m_pFrame = nullptr;
   std::shared_ptr<IVideoBufferPool> m_videoBufferPool;
-  std::shared_ptr<IVideoBufferPool> m_videoBufferPoolDumb;
+  std::shared_ptr<IVideoBufferPool> m_videoBufferPoolDmabuf;
 };

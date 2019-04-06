@@ -139,6 +139,14 @@ void CVideoBufferMemfd::Destroy()
   m_height = 0;
 }
 
+void CVideoBufferMemfd::SyncStart()
+{
+}
+
+void CVideoBufferMemfd::SyncEnd()
+{
+}
+
 void CVideoBufferMemfd::SetRef(const VideoPicture* picture)
 {
   m_pFrame->width = picture->iWidth;

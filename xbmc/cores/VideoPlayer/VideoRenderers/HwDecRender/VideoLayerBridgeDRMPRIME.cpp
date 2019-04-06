@@ -120,8 +120,8 @@ void CVideoLayerBridgeDRMPRIME::Unmap(IVideoBufferDRMPRIME* buffer)
   {
     if (buffer->m_handles[i])
     {
-      struct drm_gem_close gem_close = { .handle = buffer->m_handles[i] };
-      drmIoctl(m_DRM->GetFileDescriptor(), DRM_IOCTL_GEM_CLOSE, &gem_close);
+      //struct drm_gem_close gem_close = { .handle = buffer->m_handles[i] };
+      //drmIoctl(m_DRM->GetFileDescriptor(), DRM_IOCTL_GEM_CLOSE, &gem_close);
       buffer->m_handles[i] = 0;
     }
   }

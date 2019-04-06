@@ -11,7 +11,7 @@
 #include "ServiceBroker.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.h"
 #include "cores/VideoPlayer/Process/gbm/VideoBufferDRMPRIME.h"
-#include "cores/VideoPlayer/Process/gbm/VideoBufferMemfd.h"
+#include "cores/VideoPlayer/Process/gbm/VideoBufferDumb.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 #include "settings/lib/Setting.h"
@@ -34,7 +34,7 @@ CDVDVideoCodecDRMPRIME::CDVDVideoCodecDRMPRIME(CProcessInfo& processInfo)
 {
   m_pFrame = av_frame_alloc();
   m_videoBufferPool = std::make_shared<CVideoBufferPoolDRMPRIME>();
-  m_videoBufferPoolDumb = std::make_shared<CVideoBufferPoolMemfd>();
+  m_videoBufferPoolDmabuf = std::make_shared<CVideoBufferPoolDumb>();
 }
 
 CDVDVideoCodecDRMPRIME::~CDVDVideoCodecDRMPRIME()
@@ -129,7 +129,7 @@ enum AVPixelFormat CDVDVideoCodecDRMPRIME::GetFormat(struct AVCodecContext* avct
 
 static void ReleaseBuffer(void* opaque, uint8_t* data)
 {
-  CVideoBufferMemfd* buffer = static_cast<CVideoBufferMemfd*>(opaque);
+  CVideoBufferDumb* buffer = static_cast<CVideoBufferDumb*>(opaque);
   CLog::Log(LOGDEBUG, "CDVDVideoCodecDRMPRIME::{} - buffer:{}", __FUNCTION__, buffer->GetId());
   buffer->Release();
 }
@@ -141,7 +141,7 @@ int CDVDVideoCodecDRMPRIME::GetBuffer(struct AVCodecContext* avctx, AVFrame* fra
   if (frame->format == AV_PIX_FMT_YUV420P)
   {
     CDVDVideoCodecDRMPRIME* ctx = static_cast<CDVDVideoCodecDRMPRIME*>(avctx->opaque);
-    CVideoBufferMemfd* buffer = dynamic_cast<CVideoBufferMemfd*>(ctx->m_videoBufferPoolDumb->Get());
+    CVideoBufferDumb* buffer = dynamic_cast<CVideoBufferDumb*>(ctx->m_videoBufferPoolDmabuf->Get());
 
     buffer->Alloc(avctx, frame);
 
@@ -149,6 +149,7 @@ int CDVDVideoCodecDRMPRIME::GetBuffer(struct AVCodecContext* avctx, AVFrame* fra
     frame->opaque_ref = av_buffer_create(nullptr, 0, ReleaseBuffer, frame->opaque, AV_BUFFER_FLAG_READONLY);
 
 #if DUMB_BUFFER_EXPORT
+    buffer->SyncStart();
     buffer->Export(frame);
     return 0;
 #endif
@@ -345,15 +346,17 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
   }
   else if (m_pFrame->opaque)
   {
-    CVideoBufferMemfd* buffer = static_cast<CVideoBufferMemfd*>(m_pFrame->opaque);
+    CVideoBufferDumb* buffer = static_cast<CVideoBufferDumb*>(m_pFrame->opaque);
     buffer->Acquire();
     buffer->SetRef(pVideoPicture);
 #if !DUMB_BUFFER_EXPORT
+    buffer->SyncStart();
     buffer->Import(m_pFrame);
 #endif
+    buffer->SyncEnd();
     pVideoPicture->videoBuffer = buffer;
 
-    // TODO: set dumb buffer colorspace before unref
+    // TODO: set Dumb buffer colorspace before unref
     //av_frame_unref(m_pFrame);
   }
 

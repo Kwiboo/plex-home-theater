@@ -27,6 +27,9 @@ public:
   void Export(AVFrame* frame);
   void Import(AVFrame* frame);
 
+  void SyncStart();
+  void SyncEnd();
+
 private:
   void Create(uint32_t width, uint32_t height);
   void Destroy();

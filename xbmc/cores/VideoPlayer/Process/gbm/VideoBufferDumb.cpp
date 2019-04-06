@@ -9,6 +9,8 @@
 #include "VideoBufferDumb.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
+
+#include <linux/dma-buf.h>
 #include <sys/mman.h>
 
 #include "ServiceBroker.h"
@@ -64,7 +66,7 @@ void CVideoBufferDumb::Create(uint32_t width, uint32_t height)
   CWinSystemGbm* winSystem = dynamic_cast<CWinSystemGbm*>(CServiceBroker::GetWinSystem());
   int fd = winSystem->GetDrm()->GetFileDescriptor();
 
-  struct drm_mode_create_dumb create_dumb = { .height = height + (height >> 1), .width = width, .bpp = 8 };
+  struct drm_mode_create_dumb create_dumb = { .height = height + (height >> 1), .width = width, .bpp = 8, .flags = 0x01 };
   int ret = drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create_dumb);
   if (ret)
     CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DRM_IOCTL_MODE_CREATE_DUMB failed, ret={} errno={}", __FUNCTION__, ret, errno);
@@ -137,6 +139,22 @@ void CVideoBufferDumb::Destroy()
 
   m_width = 0;
   m_height = 0;
+}
+
+void CVideoBufferDumb::SyncStart()
+{
+  struct dma_buf_sync sync = { .flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW };
+  int ret = drmIoctl(m_fd, DMA_BUF_IOCTL_SYNC, &sync);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DMA_BUF_IOCTL_SYNC failed, ret={} errno={}", __FUNCTION__, ret, errno);
+}
+
+void CVideoBufferDumb::SyncEnd()
+{
+  struct dma_buf_sync sync = { .flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW };
+  int ret = drmIoctl(m_fd, DMA_BUF_IOCTL_SYNC, &sync);
+  if (ret)
+    CLog::Log(LOGERROR, "CVideoBufferDumb::{} - ioctl DMA_BUF_IOCTL_SYNC failed, ret={} errno={}", __FUNCTION__, ret, errno);
 }
 
 void CVideoBufferDumb::SetRef(const VideoPicture* picture)
