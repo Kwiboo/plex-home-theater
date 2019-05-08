@@ -30,11 +30,7 @@ bool CDRMPRIMETexture::Map(IVideoBufferDRMPRIME* buffer)
   if (descriptor && descriptor->nb_layers)
   {
     // get drm format of the frame
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 27, 100)
     uint32_t format = descriptor->format;
-#else
-    uint32_t format = 0;
-#endif
     if (!format && descriptor->nb_layers == 1)
       format = descriptor->layers[0].format;
     if (!format)
