@@ -43,6 +43,14 @@ void CVideoBufferDRMPRIME::Unref()
   av_frame_unref(m_pFrame);
 }
 
+AVDRMFrameDescriptor* CVideoBufferDRMPRIME::GetDescriptor() const
+{
+  if (m_pMapFrame)
+    return reinterpret_cast<AVDRMFrameDescriptor*>(m_pMapFrame->data[0]);
+
+  return reinterpret_cast<AVDRMFrameDescriptor*>(m_pFrame->data[0]);
+}
+
 int CVideoBufferDRMPRIME::GetColorEncoding() const
 {
   switch (m_pFrame->colorspace)
@@ -80,8 +88,34 @@ int CVideoBufferDRMPRIME::GetColorRange() const
 
 bool CVideoBufferDRMPRIME::IsValid() const
 {
+  if (m_pFrame->format == AV_PIX_FMT_VAAPI)
+    return true;
+
   AVDRMFrameDescriptor* descriptor = GetDescriptor();
   return descriptor && descriptor->nb_layers;
+}
+
+bool CVideoBufferDRMPRIME::Map()
+{
+  if (m_pFrame->format == AV_PIX_FMT_VAAPI)
+  {
+    m_pMapFrame = av_frame_alloc();
+    m_pMapFrame->format = AV_PIX_FMT_DRM_PRIME;
+
+    int ret = av_hwframe_map(m_pMapFrame, m_pFrame, 0);
+    if (ret)
+    {
+      av_frame_free(&m_pMapFrame);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void CVideoBufferDRMPRIME::Unmap()
+{
+  av_frame_free(&m_pMapFrame);
 }
 
 CVideoBufferPoolDRMPRIME::~CVideoBufferPoolDRMPRIME()

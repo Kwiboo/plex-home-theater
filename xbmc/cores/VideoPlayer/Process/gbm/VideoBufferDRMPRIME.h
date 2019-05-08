@@ -72,10 +72,7 @@ public:
   void SetRef(AVFrame* frame);
   void Unref();
 
-  AVDRMFrameDescriptor* GetDescriptor() const override
-  {
-    return reinterpret_cast<AVDRMFrameDescriptor*>(m_pFrame->data[0]);
-  }
+  AVDRMFrameDescriptor* GetDescriptor() const override;
   uint32_t GetWidth() const override
   {
     return m_pFrame->width;
@@ -88,9 +85,12 @@ public:
   int GetColorRange() const override;
 
   bool IsValid() const override;
+  bool Map() override;
+  void Unmap() override;
 
 protected:
   AVFrame* m_pFrame = nullptr;
+  AVFrame* m_pMapFrame = nullptr;
 };
 
 class CVideoBufferPoolDRMPRIME : public IVideoBufferPool
