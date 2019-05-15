@@ -270,6 +270,40 @@ void CDVDVideoCodecDRMPRIME::SetPictureParams(VideoPicture* pVideoPicture)
   pVideoPicture->dts = DVD_NOPTS_VALUE;
 }
 
+CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::ProcessFilterIn()
+{
+  if (!m_pFilterIn)
+    return VC_PICTURE;
+
+  int ret = av_buffersrc_add_frame(m_pFilterIn, m_pFrame);
+  if (ret < 0)
+  {
+    CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - buffersrc add frame failed, ret:{}", __FUNCTION__, ret);
+    return VC_ERROR;
+  }
+
+  return ProcessFilterOut();
+}
+
+CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::ProcessFilterOut()
+{
+  if (!m_pFilterOut)
+    return VC_EOF;
+
+  int ret = av_buffersink_get_frame(m_pFilterOut, m_pFrame);
+  if (ret == AVERROR(EAGAIN))
+    return VC_BUFFER;
+  else if (ret == AVERROR_EOF)
+    return VC_EOF;
+  else if (ret)
+  {
+    CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - buffersink get frame failed, ret:{}", __FUNCTION__, ret);
+    return VC_ERROR;
+  }
+
+  return VC_PICTURE;
+}
+
 CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideoPicture)
 {
   if (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN)
@@ -281,15 +315,23 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
     pVideoPicture->videoBuffer = nullptr;
   }
 
-  int ret = avcodec_receive_frame(m_pCodecContext, m_pFrame);
-  if (ret == AVERROR(EAGAIN))
-    return VC_BUFFER;
-  else if (ret == AVERROR_EOF)
-    return VC_EOF;
-  else if (ret)
+  auto result = ProcessFilterOut();
+  if (result != VC_PICTURE)
   {
-    CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - receive frame failed, ret:{}", __FUNCTION__, ret);
-    return VC_ERROR;
+    int ret = avcodec_receive_frame(m_pCodecContext, m_pFrame);
+    if (ret == AVERROR(EAGAIN))
+      return VC_BUFFER;
+    else if (ret == AVERROR_EOF)
+      return VC_EOF;
+    else if (ret)
+    {
+      CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - receive frame failed, ret:{}", __FUNCTION__, ret);
+      return VC_ERROR;
+    }
+
+    result = ProcessFilterIn();
+    if (result != VC_PICTURE)
+      return result;
   }
 
   SetPictureParams(pVideoPicture);
@@ -304,6 +346,7 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
   if (!pVideoPicture->videoBuffer)
   {
     CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - videoBuffer:nullptr format:{}", __FUNCTION__, av_get_pix_fmt_name(static_cast<AVPixelFormat>(m_pFrame->format)));
+    av_frame_unref(m_pFrame);
     return VC_ERROR;
   }
 
