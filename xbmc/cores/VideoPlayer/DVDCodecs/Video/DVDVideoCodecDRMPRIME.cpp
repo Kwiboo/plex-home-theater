@@ -122,6 +122,8 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   if (!m_pCodecContext)
     return false;
 
+  m_hints = hints;
+
   const AVCodecHWConfig* pConfig = FindHWConfig(pCodec);
   if (pConfig &&
       (pConfig->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) &&
@@ -252,15 +254,25 @@ void CDVDVideoCodecDRMPRIME::SetPictureParams(VideoPicture* pVideoPicture)
     pVideoPicture->iDisplayHeight = ((int)lrint(pVideoPicture->iWidth / aspect_ratio)) & -3;
   }
 
-  pVideoPicture->color_range = m_pFrame->color_range == AVCOL_RANGE_JPEG ? 1 : 0;
-  pVideoPicture->color_primaries = m_pFrame->color_primaries;
-  pVideoPicture->color_transfer = m_pFrame->color_trc;
-  pVideoPicture->color_space = m_pFrame->colorspace;
+  pVideoPicture->color_primaries = m_pFrame->color_primaries == AVCOL_PRI_UNSPECIFIED ? m_hints.colorPrimaries : m_pFrame->color_primaries;
+  pVideoPicture->color_transfer = m_pFrame->color_trc == AVCOL_TRC_UNSPECIFIED ? m_hints.colorTransferCharacteristic : m_pFrame->color_trc;
+  pVideoPicture->color_space = m_pFrame->colorspace == AVCOL_SPC_UNSPECIFIED ? m_hints.colorSpace : m_pFrame->colorspace;
+  pVideoPicture->color_range = m_pFrame->color_range == AVCOL_RANGE_JPEG || m_hints.colorRange == AVCOL_RANGE_JPEG ? 1 : 0;
+  pVideoPicture->chroma_position = m_pFrame->chroma_location;
+
+  pVideoPicture->colorBits = 8;
+  if (m_pCodecContext->codec_id == AV_CODEC_ID_HEVC &&
+      m_pCodecContext->profile == FF_PROFILE_HEVC_MAIN_10)
+    pVideoPicture->colorBits = 10;
+  else if (m_pCodecContext->codec_id == AV_CODEC_ID_H264 &&
+           (m_pCodecContext->profile == FF_PROFILE_H264_HIGH_10 ||
+            m_pCodecContext->profile == FF_PROFILE_H264_HIGH_10_INTRA))
+    pVideoPicture->colorBits = 10;
 
   pVideoPicture->iRepeatPicture = 0;
   pVideoPicture->iFlags = 0;
   pVideoPicture->iFlags |= m_pFrame->interlaced_frame ? DVP_FLAG_INTERLACED : 0;
-  pVideoPicture->iFlags |= m_pFrame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST: 0;
+  pVideoPicture->iFlags |= m_pFrame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST : 0;
   pVideoPicture->iFlags |= m_pFrame->data[0] ? 0 : DVP_FLAG_DROPPED;
 
   int64_t pts = m_pFrame->pts;
