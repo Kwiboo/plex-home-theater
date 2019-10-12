@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
 #include "cores/VideoPlayer/Process/VideoBuffer.h"
 
 extern "C"
@@ -36,16 +37,10 @@ public:
   ~CVideoBufferDRMPRIME() override = default;
 
   virtual AVDRMFrameDescriptor* GetDescriptor() const = 0;
-  virtual uint32_t GetWidth() const = 0;
-  virtual uint32_t GetHeight() const = 0;
-  virtual int GetColorEncoding() const
-  {
-    return DRM_COLOR_YCBCR_BT709;
-  };
-  virtual int GetColorRange() const
-  {
-    return DRM_COLOR_YCBCR_LIMITED_RANGE;
-  };
+  uint32_t GetWidth() const;
+  uint32_t GetHeight() const;
+  int GetColorEncoding() const;
+  int GetColorRange() const;
 
   virtual bool IsValid() const
   {
@@ -59,6 +54,8 @@ public:
 
   uint32_t m_fb_id = 0;
   uint32_t m_handles[AV_DRM_MAX_PLANES] = {};
+
+  VideoPicture DVDPic;
 
 protected:
   explicit CVideoBufferDRMPRIME(int id);
@@ -76,16 +73,6 @@ public:
   {
     return reinterpret_cast<AVDRMFrameDescriptor*>(m_pFrame->data[0]);
   }
-  uint32_t GetWidth() const override
-  {
-    return m_pFrame->width;
-  }
-  uint32_t GetHeight() const override
-  {
-    return m_pFrame->height;
-  }
-  int GetColorEncoding() const override;
-  int GetColorRange() const override;
 
   bool IsValid() const override;
 

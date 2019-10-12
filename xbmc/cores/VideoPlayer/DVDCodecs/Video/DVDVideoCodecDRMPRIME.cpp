@@ -335,6 +335,7 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
   if (m_pFrame->format == AV_PIX_FMT_DRM_PRIME)
   {
     CVideoBufferDRMPRIMEFFmpeg* buffer = dynamic_cast<CVideoBufferDRMPRIMEFFmpeg*>(m_videoBufferPool->Get());
+    buffer->DVDPic.SetParams(*pVideoPicture);
     buffer->SetRef(m_pFrame);
     pVideoPicture->videoBuffer = buffer;
   }

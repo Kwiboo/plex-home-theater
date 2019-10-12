@@ -21,6 +21,46 @@ CVideoBufferDRMPRIME::CVideoBufferDRMPRIME(int id)
 {
 }
 
+uint32_t CVideoBufferDRMPRIME::GetWidth() const
+{
+  return DVDPic.iWidth;
+}
+
+uint32_t CVideoBufferDRMPRIME::GetHeight() const
+{
+  return DVDPic.iHeight;
+}
+
+int CVideoBufferDRMPRIME::GetColorEncoding() const
+{
+  switch (DVDPic.color_space)
+  {
+  case AVCOL_SPC_BT2020_CL:
+  case AVCOL_SPC_BT2020_NCL:
+    return DRM_COLOR_YCBCR_BT2020;
+  case AVCOL_SPC_SMPTE170M:
+  case AVCOL_SPC_BT470BG:
+  case AVCOL_SPC_FCC:
+    return DRM_COLOR_YCBCR_BT601;
+  case AVCOL_SPC_BT709:
+    return DRM_COLOR_YCBCR_BT709;
+  case AVCOL_SPC_RESERVED:
+  case AVCOL_SPC_UNSPECIFIED:
+  default:
+    if (DVDPic.iWidth > 1024 || DVDPic.iHeight >= 600)
+      return DRM_COLOR_YCBCR_BT709;
+    else
+      return DRM_COLOR_YCBCR_BT601;
+  }
+}
+
+int CVideoBufferDRMPRIME::GetColorRange() const
+{
+  if (DVDPic.color_range)
+    return DRM_COLOR_YCBCR_FULL_RANGE;
+  return DRM_COLOR_YCBCR_LIMITED_RANGE;
+}
+
 CVideoBufferDRMPRIMEFFmpeg::CVideoBufferDRMPRIMEFFmpeg(IVideoBufferPool& pool, int id)
   : CVideoBufferDRMPRIME(id)
 {
@@ -41,41 +81,6 @@ void CVideoBufferDRMPRIMEFFmpeg::SetRef(AVFrame* frame)
 void CVideoBufferDRMPRIMEFFmpeg::Unref()
 {
   av_frame_unref(m_pFrame);
-}
-
-int CVideoBufferDRMPRIMEFFmpeg::GetColorEncoding() const
-{
-  switch (m_pFrame->colorspace)
-  {
-  case AVCOL_SPC_BT2020_CL:
-  case AVCOL_SPC_BT2020_NCL:
-    return DRM_COLOR_YCBCR_BT2020;
-  case AVCOL_SPC_SMPTE170M:
-  case AVCOL_SPC_BT470BG:
-  case AVCOL_SPC_FCC:
-    return DRM_COLOR_YCBCR_BT601;
-  case AVCOL_SPC_BT709:
-    return DRM_COLOR_YCBCR_BT709;
-  case AVCOL_SPC_RESERVED:
-  case AVCOL_SPC_UNSPECIFIED:
-  default:
-    if (m_pFrame->width > 1024 || m_pFrame->height >= 600)
-      return DRM_COLOR_YCBCR_BT709;
-    else
-      return DRM_COLOR_YCBCR_BT601;
-  }
-}
-
-int CVideoBufferDRMPRIMEFFmpeg::GetColorRange() const
-{
-  switch (m_pFrame->color_range)
-  {
-  case AVCOL_RANGE_JPEG:
-    return DRM_COLOR_YCBCR_FULL_RANGE;
-  case AVCOL_RANGE_MPEG:
-  default:
-    return DRM_COLOR_YCBCR_LIMITED_RANGE;
-  }
 }
 
 bool CVideoBufferDRMPRIMEFFmpeg::IsValid() const
