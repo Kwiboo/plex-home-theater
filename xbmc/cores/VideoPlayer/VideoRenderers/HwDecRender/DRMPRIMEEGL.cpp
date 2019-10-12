@@ -50,7 +50,10 @@ bool CDRMPRIMETexture::Map(CVideoBufferDRMPRIME* buffer)
     attribs.planes = planes;
 
     if (!m_eglImage->CreateImage(attribs))
+    {
+      buffer->Unmap();
       return false;
+    }
 
     glGenTextures(1, &m_texture);
     glBindTexture(m_textureTarget, m_texture);
@@ -85,34 +88,26 @@ void CDRMPRIMETexture::Unmap()
 
 int CDRMPRIMETexture::GetColorSpace(int colorSpace)
 {
-  switch(colorSpace)
+  switch (colorSpace)
   {
-    case DRM_COLOR_YCBCR_BT2020:
-      return EGL_ITU_REC2020_EXT;
-    case DRM_COLOR_YCBCR_BT601:
-      return EGL_ITU_REC601_EXT;
-    case DRM_COLOR_YCBCR_BT709:
-      return EGL_ITU_REC709_EXT;
-    default:
-      CLog::Log(LOGERROR, "CEGLImage::%s - failed to get colorspace for: %d", __FUNCTION__, colorSpace);
-      break;
+  case DRM_COLOR_YCBCR_BT2020:
+    return EGL_ITU_REC2020_EXT;
+  case DRM_COLOR_YCBCR_BT601:
+    return EGL_ITU_REC601_EXT;
+  case DRM_COLOR_YCBCR_BT709:
+  default:
+    return EGL_ITU_REC709_EXT;
   }
-
-  return -1;
 }
 
 int CDRMPRIMETexture::GetColorRange(int colorRange)
 {
-  switch(colorRange)
+  switch (colorRange)
   {
-    case DRM_COLOR_YCBCR_FULL_RANGE:
-      return EGL_YUV_FULL_RANGE_EXT;
-    case DRM_COLOR_YCBCR_LIMITED_RANGE:
-      return EGL_YUV_NARROW_RANGE_EXT;
-    default:
-      CLog::Log(LOGERROR, "CEGLImage::%s - failed to get colorrange for: %d", __FUNCTION__, colorRange);
-      break;
+  case DRM_COLOR_YCBCR_FULL_RANGE:
+    return EGL_YUV_FULL_RANGE_EXT;
+  case DRM_COLOR_YCBCR_LIMITED_RANGE:
+  default:
+    return EGL_YUV_NARROW_RANGE_EXT;
   }
-
-  return -1;
 }
