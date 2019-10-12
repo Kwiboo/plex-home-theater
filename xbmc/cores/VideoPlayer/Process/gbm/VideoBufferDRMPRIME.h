@@ -15,6 +15,7 @@ extern "C"
 {
 #include <libavutil/frame.h>
 #include <libavutil/hwcontext_drm.h>
+#include <libavutil/mastering_display_metadata.h>
 }
 
 // Color enums is copied from linux include/drm/drm_color_mgmt.h (strangely not part of uapi)
@@ -29,6 +30,18 @@ enum drm_color_range
   DRM_COLOR_YCBCR_LIMITED_RANGE,
   DRM_COLOR_YCBCR_FULL_RANGE,
 };
+// HDR enums is copied from linux include/linux/hdmi.h (strangely not part of uapi)
+enum hdmi_metadata_type
+{
+  HDMI_STATIC_METADATA_TYPE1 = 1,
+};
+enum hdmi_eotf
+{
+  HDMI_EOTF_TRADITIONAL_GAMMA_SDR,
+  HDMI_EOTF_TRADITIONAL_GAMMA_HDR,
+  HDMI_EOTF_SMPTE_ST2084,
+  HDMI_EOTF_BT_2100_HLG,
+};
 
 class CVideoBufferDRMPRIME : public CVideoBuffer
 {
@@ -41,6 +54,9 @@ public:
   uint32_t GetHeight() const;
   int GetColorEncoding() const;
   int GetColorRange() const;
+  uint8_t GetEOTF() const;
+  const AVMasteringDisplayMetadata* GetMasteringDisplayMetadata() const;
+  const AVContentLightMetadata* GetContentLightMetadata() const;
 
   virtual bool IsValid() const
   {

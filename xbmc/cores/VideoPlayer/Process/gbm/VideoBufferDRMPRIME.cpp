@@ -61,6 +61,30 @@ int CVideoBufferDRMPRIME::GetColorRange() const
   return DRM_COLOR_YCBCR_LIMITED_RANGE;
 }
 
+uint8_t CVideoBufferDRMPRIME::GetEOTF() const
+{
+  switch (DVDPic.color_transfer)
+  {
+  case AVCOL_TRC_SMPTE2084:
+    return HDMI_EOTF_SMPTE_ST2084;
+  case AVCOL_TRC_ARIB_STD_B67:
+  case AVCOL_TRC_BT2020_10:
+    return HDMI_EOTF_BT_2100_HLG;
+  default:
+    return HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
+  }
+}
+
+const AVMasteringDisplayMetadata* CVideoBufferDRMPRIME::GetMasteringDisplayMetadata() const
+{
+  return DVDPic.hasDisplayMetadata ? &DVDPic.displayMetadata : nullptr;
+}
+
+const AVContentLightMetadata* CVideoBufferDRMPRIME::GetContentLightMetadata() const
+{
+  return DVDPic.hasLightMetadata ? &DVDPic.lightMetadata : nullptr;
+}
+
 CVideoBufferDRMPRIMEFFmpeg::CVideoBufferDRMPRIMEFFmpeg(IVideoBufferPool& pool, int id)
   : CVideoBufferDRMPRIME(id)
 {
