@@ -81,6 +81,7 @@ static const AVCodec* FindDecoder(CDVDStreamInfo& hints)
   const AVCodec* codec = nullptr;
   void *i = 0;
 
+  if (!(hints.codecOptions & CODEC_FORCE_SOFTWARE))
   while ((codec = av_codec_iterate(&i)))
   {
     if (!av_codec_is_decoder(codec))
@@ -203,7 +204,12 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   {
     CLog::Log(LOGNOTICE, "CDVDVideoCodecDRMPRIME::{} - unable to open codec", __FUNCTION__);
     avcodec_free_context(&m_pCodecContext);
-    return false;
+    if (!(hints.codecOptions & CODEC_FORCE_SOFTWARE))
+        return false;
+
+    CDVDStreamInfo hints2 = hints;
+    hints2.codecOptions |= CODEC_FORCE_SOFTWARE;
+    return Open(hints2, options);
   }
 
   UpdateProcessInfo(m_pCodecContext, m_pCodecContext->pix_fmt);
