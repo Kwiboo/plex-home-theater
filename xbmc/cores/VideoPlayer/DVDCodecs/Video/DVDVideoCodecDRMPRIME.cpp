@@ -26,7 +26,7 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
-#define DUMB_BUFFER_EXPORT 1
+#define DUMB_BUFFER_EXPORT 0
 
 using namespace KODI::WINDOWING::GBM;
 
@@ -224,7 +224,7 @@ void CDVDVideoCodecDRMPRIME::UpdateProcessInfo(struct AVCodecContext* avctx, con
   else
     m_name = "ffmpeg";
 
-  m_processInfo.SetVideoDecoderName(m_name, pix_fmt == AV_PIX_FMT_DRM_PRIME);
+  m_processInfo.SetVideoDecoderName(m_name + "-drm_prime", pix_fmt == AV_PIX_FMT_DRM_PRIME);
 }
 
 bool CDVDVideoCodecDRMPRIME::AddData(const DemuxPacket& packet)
