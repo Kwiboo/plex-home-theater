@@ -7234,7 +7234,159 @@ msgctxt "#13465"
 msgid "EGL"
 msgstr ""
 
-#empty strings from id 13466 to 13504
+#. Option for setting Limit GUI Size
+#: system/settings/gbm.xml
+msgctxt "#13466"
+msgid "Limit GUI Size"
+msgstr ""
+
+#. Description of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13467"
+msgid "This option limits GUI size for screen resolutions above 1080p. Requires restart."
+msgstr ""
+
+#. String for options 1 of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13468"
+msgid "No limit"
+msgstr ""
+
+#. String for options 2 of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13469"
+msgid "720p"
+msgstr ""
+
+#. String for options 3 of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13470"
+msgid "1080p / 720p (>30hz)"
+msgstr ""
+
+#. String for options 4 of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13471"
+msgid "1080p"
+msgstr ""
+
+#. String for options 5 of setting with label #13466 "Limit GUI Size"
+#: system/settings/gbm.xml
+msgctxt "#13472"
+msgid "No limit / 1080p (>30hz)"
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13473"
+msgid "Use multithreaded decoding"
+msgstr ""
+
+#. Description of setting with label #13473 "Use multithreaded decoding"
+#: system/settings/gbm.xml
+msgctxt "#13474"
+msgid "Enable this option to use multithreaded decoding."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13475"
+msgid "Use MPEG-2 acceleration"
+msgstr ""
+
+#. Description of setting with label #13475 "Use MPEG-2 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13476"
+msgid "Enable this option to use hardware acceleration for MPEG-2 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13477"
+msgid "Use MPEG-4 acceleration"
+msgstr ""
+
+#. Description of setting with label #13477 "Use MPEG-4 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13478"
+msgid "Enable this option to use hardware acceleration for MPEG-4 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13479"
+msgid "Use H264 acceleration"
+msgstr ""
+
+#. Description of setting with label #13479 "Use H264 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13480"
+msgid "Enable this option to use hardware acceleration for H264 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13481"
+msgid "Use HEVC acceleration"
+msgstr ""
+
+#. Description of setting with label #13481 "Use HEVC acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13482"
+msgid "Enable this option to use hardware acceleration for HEVC codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13483"
+msgid "Use VC-1 acceleration"
+msgstr ""
+
+#. Description of setting with label #13483 "Use VC-1 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13484"
+msgid "Enable this option to use hardware acceleration for VC-1 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13485"
+msgid "Use VP8 acceleration"
+msgstr ""
+
+#. Description of setting with label #13485 "Use VP8 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13486"
+msgid "Enable this option to use hardware acceleration for VP8 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13487"
+msgid "Use VP9 acceleration"
+msgstr ""
+
+#. Description of setting with label #13487 "Use VP9 acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13488"
+msgid "Enable this option to use hardware acceleration for VP9 codecs."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13489"
+msgid "Use PRIME software decoding"
+msgstr ""
+
+#. Description of setting with label #13489 "Use PRIME software decoding"
+#: system/settings/gbm.xml
+msgctxt "#13490"
+msgid "Enable this option to use PRIME decoder for software decoding."
+msgstr ""
+
+#: system/settings/gbm.xml
+msgctxt "#13491"
+msgid "Use PRIME VAAPI hardware acceleration"
+msgstr ""
+
+#. Description of setting with label #13491 "Use PRIME VAAPI hardware acceleration"
+#: system/settings/gbm.xml
+msgctxt "#13492"
+msgid "Enable this option to use PRIME decoder for VAAPI hardware acceleration."
+msgstr ""
+
+#empty strings from id 13493 to 13504
 
 #: system/settings/settings.xml
 msgctxt "#13505"
