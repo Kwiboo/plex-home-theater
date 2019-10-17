@@ -15,6 +15,86 @@
           <default>true</default>
           <control type="toggle" />
         </setting>
+        <setting id="videoplayer.useprimesoftware" type="boolean" parent="videoplayer.useprimedecoder" label="13489" help="13490">
+          <level>2</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimemultithread" type="boolean" parent="videoplayer.useprimedecoder" label="13473" help="13474">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimempeg2" type="boolean" parent="videoplayer.useprimedecoder" label="13475" help="13476">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimempeg4" type="boolean" parent="videoplayer.useprimedecoder" label="13477" help="13478">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimeh264" type="boolean" parent="videoplayer.useprimedecoder" label="13479" help="13480">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimehevc" type="boolean" parent="videoplayer.useprimedecoder" label="13481" help="13482">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimevc1" type="boolean" parent="videoplayer.useprimedecoder" label="13483" help="13484">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimevp8" type="boolean" parent="videoplayer.useprimedecoder" label="13485" help="13486">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimevp9" type="boolean" parent="videoplayer.useprimedecoder" label="13487" help="13488">
+          <level>3</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.useprimesvaapi" type="boolean" parent="videoplayer.useprimedecoder" label="13491" help="13492">
+          <level>3</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="enable" setting="videoplayer.useprimedecoder">true</dependency>
+          </dependencies>
+          <control type="toggle" />
+        </setting>
         <setting id="videoplayer.useprimerenderer" type="integer" label="13462" help="13463">
           <visible>false</visible>
           <level>2</level>
