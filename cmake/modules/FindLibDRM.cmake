@@ -8,6 +8,7 @@
 # LIBDRM_FOUND - system has LibDRM
 # LIBDRM_INCLUDE_DIRS - the LibDRM include directory
 # LIBDRM_LIBRARIES - the LibDRM libraries
+# LIBDRM_DEFINITIONS  - the LibDRM definitions
 #
 # and the following imported targets::
 #
@@ -30,9 +31,24 @@ find_package_handle_standard_args(LibDRM
                                   REQUIRED_VARS LIBDRM_LIBRARY LIBDRM_INCLUDE_DIR
                                   VERSION_VAR LIBDRM_VERSION)
 
+include(CheckCSourceCompiles)
+set(CMAKE_REQUIRED_INCLUDES ${LIBDRM_INCLUDE_DIR})
+check_c_source_compiles("#include <drm_mode.h>
+
+                         int main()
+                         {
+                           struct hdr_output_metadata test;
+                           test.metadata_type = 1;
+                         }
+                         " LIBDRM_HAS_HDR_OUTPUT_METADATA)
+
 if(LIBDRM_FOUND)
   set(LIBDRM_LIBRARIES ${LIBDRM_LIBRARY})
   set(LIBDRM_INCLUDE_DIRS ${LIBDRM_INCLUDE_DIR})
+  set(LIBDRM_DEFINITIONS -DHAVE_LIBDRM=1)
+  if(LIBDRM_HAS_HDR_OUTPUT_METADATA)
+    list(APPEND LIBDRM_DEFINITIONS -DHAVE_HDR_OUTPUT_METADATA=1)
+  endif()
 
   if(NOT TARGET LIBDRM::LIBDRM)
     add_library(LIBDRM::LIBDRM UNKNOWN IMPORTED)
