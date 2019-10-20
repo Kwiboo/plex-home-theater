@@ -1421,6 +1421,66 @@ void CVaapiRenderPicture::GetStrides(int(&strides)[YuvImage::MAX_PLANES])
   strides[2] = avFrame->linesize[2];
 }
 
+#if VA_CHECK_VERSION(1, 1, 0)
+bool CVaapiRenderPicture::AcquireDescriptor()
+{
+  auto status = vaSyncSurface(vadsp, procPic.videoSurface);
+  if (status != VA_STATUS_SUCCESS)
+  {
+    CLog::Log(LOGERROR, "CVaapiRenderPicture::{} - vaSyncSurface - Error: {} ({})", __FUNCTION__,
+              vaErrorStr(status), status);
+    return false;
+  }
+
+  VADRMPRIMESurfaceDescriptor vaDesc;
+  status = vaExportSurfaceHandle(
+      vadsp, procPic.videoSurface, VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+      VA_EXPORT_SURFACE_READ_ONLY | VA_EXPORT_SURFACE_COMPOSED_LAYERS, &vaDesc);
+  if (status != VA_STATUS_SUCCESS)
+  {
+    CLog::Log(LOGERROR, "CVaapiRenderPicture::{} - vaExportSurfaceHandle failed - Error: {} ({})",
+              __FUNCTION__, vaErrorStr(status), status);
+    return false;
+  }
+
+  m_drmDesc.reset(new AVDRMFrameDescriptor());
+
+  m_drmDesc->nb_objects = vaDesc.num_objects;
+  for (uint32_t i = 0; i < vaDesc.num_objects; i++)
+  {
+    m_drmDesc->objects[i].fd = vaDesc.objects[i].fd;
+    m_drmDesc->objects[i].size = vaDesc.objects[i].size;
+    m_drmDesc->objects[i].format_modifier = vaDesc.objects[i].drm_format_modifier;
+  }
+
+  m_drmDesc->nb_layers = vaDesc.num_layers;
+  for (uint32_t i = 0; i < vaDesc.num_layers; i++)
+  {
+    m_drmDesc->layers[i].format = vaDesc.layers[i].drm_format;
+    m_drmDesc->layers[i].nb_planes = vaDesc.layers[i].num_planes;
+    for (uint32_t j = 0; j < vaDesc.layers[i].num_planes; j++)
+    {
+      m_drmDesc->layers[i].planes[j].object_index = vaDesc.layers[i].object_index[j];
+      m_drmDesc->layers[i].planes[j].offset = vaDesc.layers[i].offset[j];
+      m_drmDesc->layers[i].planes[j].pitch = vaDesc.layers[i].pitch[j];
+    }
+  }
+
+  return true;
+}
+
+void CVaapiRenderPicture::ReleaseDescriptor()
+{
+  if (!m_drmDesc)
+    return;
+
+  for (int i = 0; i < m_drmDesc->nb_objects; i++)
+    close(m_drmDesc->objects[i].fd);
+
+  m_drmDesc.reset();
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Output
 //-----------------------------------------------------------------------------

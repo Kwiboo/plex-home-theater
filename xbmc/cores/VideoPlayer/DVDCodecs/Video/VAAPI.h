@@ -10,19 +10,23 @@
 
 #include "DVDVideoCodec.h"
 #include "cores/VideoPlayer/Process/VideoBuffer.h"
+#include "cores/VideoPlayer/Process/gbm/VideoBufferDRMPRIME.h"
 #include "cores/VideoSettings.h"
 #include "threads/CriticalSection.h"
-#include "threads/SharedSection.h"
 #include "threads/Event.h"
+#include "threads/SharedSection.h"
 #include "threads/Thread.h"
 #include "utils/ActorProtocol.h"
 #include "utils/Geometry.h"
+
+#include "platform/linux/sse4/DllLibSSE4.h"
+
 #include <list>
 #include <map>
 #include <memory>
 #include <vector>
+
 #include <va/va.h>
-#include "platform/linux/sse4/DllLibSSE4.h"
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -166,18 +170,35 @@ struct CVaapiProcessedPicture
   bool crop;
 };
 
-class CVaapiRenderPicture : public CVideoBuffer
+class CVaapiRenderPicture : public CVideoBufferDRMPRIME
 {
 public:
-  explicit CVaapiRenderPicture(int id) : CVideoBuffer(id) { }
+  explicit CVaapiRenderPicture(int id) : CVideoBufferDRMPRIME(id) {}
+  ~CVaapiRenderPicture() = default;
   void GetPlanes(uint8_t*(&planes)[YuvImage::MAX_PLANES]) override;
   void GetStrides(int(&strides)[YuvImage::MAX_PLANES]) override;
+
+  // CVideoBufferDRMPRIME
+  const VideoPicture& GetPicture() const override { return DVDPic; }
+#if VA_CHECK_VERSION(1, 1, 0)
+  AVDRMFrameDescriptor* GetDescriptor() const override { return m_drmDesc.get(); }
+  bool AcquireDescriptor() override;
+  void ReleaseDescriptor() override;
+#else
+  AVDRMFrameDescriptor* GetDescriptor() const override { return nullptr; }
+#endif
+
   VideoPicture DVDPic;
   CVaapiProcessedPicture procPic;
   AVFrame *avFrame = nullptr;
 
   bool valid = false;
   VADisplay vadsp;
+
+#if VA_CHECK_VERSION(1, 1, 0)
+private:
+  std::unique_ptr<AVDRMFrameDescriptor> m_drmDesc;
+#endif
 };
 
 //-----------------------------------------------------------------------------
