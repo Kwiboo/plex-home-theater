@@ -22,7 +22,7 @@ bool CDRMPRIMETexture::Map(CVideoBufferDRMPRIME* buffer)
   if (m_primebuffer)
     return true;
 
-  if (!buffer->Map())
+  if (!buffer->AcquireDescriptor())
     return false;
 
   m_texWidth = buffer->GetWidth();
@@ -40,7 +40,10 @@ bool CDRMPRIMETexture::Map(CVideoBufferDRMPRIME* buffer)
     if (!format && descriptor->nb_layers == 1)
       format = descriptor->layers[0].format;
     if (!format)
+    {
+      buffer->ReleaseDescriptor();
       return false;
+    }
 
     std::array<CEGLImage::EglPlane, CEGLImage::MAX_NUM_PLANES> planes;
 
@@ -72,7 +75,10 @@ bool CDRMPRIMETexture::Map(CVideoBufferDRMPRIME* buffer)
     attribs.planes = planes;
 
     if (!m_eglImage->CreateImage(attribs))
+    {
+      buffer->ReleaseDescriptor();
       return false;
+    }
 
     glGenTextures(1, &m_texture);
     glBindTexture(m_textureTarget, m_texture);
@@ -99,7 +105,7 @@ void CDRMPRIMETexture::Unmap()
 
   glDeleteTextures(1, &m_texture);
 
-  m_primebuffer->Unmap();
+  m_primebuffer->ReleaseDescriptor();
 
   m_primebuffer->Release();
   m_primebuffer = nullptr;

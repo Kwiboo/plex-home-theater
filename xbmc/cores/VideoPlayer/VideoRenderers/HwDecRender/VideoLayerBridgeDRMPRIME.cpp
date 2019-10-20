@@ -72,7 +72,7 @@ bool CVideoLayerBridgeDRMPRIME::Map(CVideoBufferDRMPRIME* buffer)
   if (buffer->m_fb_id)
     return true;
 
-  if (!buffer->Map())
+  if (!buffer->AcquireDescriptor())
     return false;
 
   AVDRMFrameDescriptor* descriptor = buffer->GetDescriptor();
@@ -160,7 +160,7 @@ void CVideoLayerBridgeDRMPRIME::Unmap(CVideoBufferDRMPRIME* buffer)
     }
   }
 
-  buffer->Unmap();
+  buffer->ReleaseDescriptor();
 }
 
 void CVideoLayerBridgeDRMPRIME::Configure(CVideoBufferDRMPRIME* buffer)
