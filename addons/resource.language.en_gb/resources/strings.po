@@ -7219,7 +7219,7 @@ msgstr ""
 #. Description of setting with label #13462 "PRIME Render Method"
 #: system/settings/settings.xml
 msgctxt "#13463"
-msgid "This option switches between direct-to-plane and EGL rendering methods."
+msgid "This option switches between direct-to-plane and EGL rendering methods. Set to None if no PRIME rendering method should be used."
 msgstr ""
 
 #. String for options 1 of setting with label #13462 "PRIME Render Method"
@@ -7234,7 +7234,13 @@ msgctxt "#13465"
 msgid "EGL"
 msgstr ""
 
-#empty strings from id 13466 to 13504
+#. String for options 3 of setting with label #13462 "PRIME Render Method"
+#: system/settings/settings.xml
+msgctxt "#13466"
+msgid "None"
+msgstr ""
+
+#empty strings from id 13467 to 13504
 
 #: system/settings/settings.xml
 msgctxt "#13505"

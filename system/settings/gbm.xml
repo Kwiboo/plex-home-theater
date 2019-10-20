@@ -23,6 +23,7 @@
             <options>
               <option label="13464">0</option> <!-- DIRECT -->
               <option label="13465">1</option> <!-- GLES -->
+              <option label="13466">2</option> <!-- NONE -->
             </options>
           </constraints>
           <control type="spinner" format="string" />

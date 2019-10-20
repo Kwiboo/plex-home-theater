@@ -14,6 +14,8 @@
 #include "cores/VideoPlayer/VideoRenderers/RenderFactory.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
 #include "rendering/gles/RenderSystemGLES.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 #include "utils/EGLFence.h"
 #include "utils/GLUtils.h"
 #include "utils/log.h"
@@ -22,6 +24,8 @@
 using namespace KODI::WINDOWING::GBM;
 using namespace KODI::UTILS::EGL;
 
+const std::string SETTING_VIDEOPLAYER_USEPRIMERENDERER = "videoplayer.useprimerenderer";
+
 CRendererDRMPRIMEGLES::~CRendererDRMPRIMEGLES()
 {
   Flush(false);
@@ -29,7 +33,9 @@ CRendererDRMPRIMEGLES::~CRendererDRMPRIMEGLES()
 
 CBaseRenderer* CRendererDRMPRIMEGLES::Create(CVideoBuffer* buffer)
 {
-  if (buffer && dynamic_cast<CVideoBufferDRMPRIME*>(buffer))
+  if (buffer && dynamic_cast<CVideoBufferDRMPRIME*>(buffer) &&
+      CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(
+          SETTING_VIDEOPLAYER_USEPRIMERENDERER) != 2)
     return new CRendererDRMPRIMEGLES();
 
   return nullptr;
