@@ -60,12 +60,17 @@ void CDVDVideoCodecDRMPRIME::Register()
   CDVDFactoryCodec::RegisterHWVideoCodec("drm_prime", CDVDVideoCodecDRMPRIME::Create);
 }
 
+static bool IsSupportedHwFormat(const enum AVPixelFormat fmt)
+{
+  return fmt == AV_PIX_FMT_DRM_PRIME;
+}
+
 static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
 {
   const AVCodecHWConfig* config = nullptr;
   for (int n = 0; (config = avcodec_get_hw_config(codec, n)); n++)
   {
-    if (config->pix_fmt != AV_PIX_FMT_DRM_PRIME)
+    if (!IsSupportedHwFormat(config->pix_fmt))
       continue;
 
     if ((config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) &&
@@ -104,7 +109,7 @@ enum AVPixelFormat CDVDVideoCodecDRMPRIME::GetFormat(struct AVCodecContext* avct
 {
   for (int n = 0; fmt[n] != AV_PIX_FMT_NONE; n++)
   {
-    if (fmt[n] == AV_PIX_FMT_DRM_PRIME)
+    if (IsSupportedHwFormat(fmt[n]))
     {
       CDVDVideoCodecDRMPRIME* ctx = static_cast<CDVDVideoCodecDRMPRIME*>(avctx->opaque);
       ctx->UpdateProcessInfo(avctx, fmt[n]);
@@ -199,7 +204,7 @@ void CDVDVideoCodecDRMPRIME::UpdateProcessInfo(struct AVCodecContext* avctx,
   else
     m_name = "ffmpeg";
 
-  m_processInfo.SetVideoDecoderName(m_name, pix_fmt == AV_PIX_FMT_DRM_PRIME);
+  m_processInfo.SetVideoDecoderName(m_name, IsSupportedHwFormat(pix_fmt));
 }
 
 bool CDVDVideoCodecDRMPRIME::AddData(const DemuxPacket& packet)
@@ -403,7 +408,7 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecDRMPRIME::GetPicture(VideoPicture* pVideo
 
   SetPictureParams(pVideoPicture);
 
-  if (m_pFrame->format == AV_PIX_FMT_DRM_PRIME)
+  if (IsSupportedHwFormat(static_cast<AVPixelFormat>(m_pFrame->format)))
   {
     CVideoBufferDRMPRIMEFFmpeg* buffer =
         dynamic_cast<CVideoBufferDRMPRIMEFFmpeg*>(m_videoBufferPool->Get());
