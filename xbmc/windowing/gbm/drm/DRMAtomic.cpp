@@ -65,7 +65,8 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
 {
   uint32_t blob_id;
 
-  if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+  bool modeset = (flags & DRM_MODE_ATOMIC_ALLOW_MODESET);
+  if (modeset)
   {
     if (!AddProperty(m_connector, "CRTC_ID", m_crtc->GetCrtcId()))
       return;
@@ -94,23 +95,26 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
   {
     AddProperty(m_gui_plane, "FB_ID", fb_id);
     AddProperty(m_gui_plane, "CRTC_ID", m_crtc->GetCrtcId());
-    AddProperty(m_gui_plane, "SRC_X", 0);
-    AddProperty(m_gui_plane, "SRC_Y", 0);
-    AddProperty(m_gui_plane, "SRC_W", m_width << 16);
-    AddProperty(m_gui_plane, "SRC_H", m_height << 16);
-    AddProperty(m_gui_plane, "CRTC_X", 0);
-    AddProperty(m_gui_plane, "CRTC_Y", 0);
-    //! @todo: disabled until upstream kernel changes are merged
-    // if (DisplayHardwareScalingEnabled())
-    // {
-    //   SetScalingFilter(m_gui_plane, "SCALING_FILTER", "Nearest Neighbor");
-    // }
-    // else
-    {
-      AddProperty(m_gui_plane, "CRTC_W", m_mode->hdisplay);
-      AddProperty(m_gui_plane, "CRTC_H", m_mode->vdisplay);
-    }
 
+    if (modeset)
+    {
+      AddProperty(m_gui_plane, "SRC_X", 0);
+      AddProperty(m_gui_plane, "SRC_Y", 0);
+      AddProperty(m_gui_plane, "SRC_W", m_width << 16);
+      AddProperty(m_gui_plane, "SRC_H", m_height << 16);
+      AddProperty(m_gui_plane, "CRTC_X", 0);
+      AddProperty(m_gui_plane, "CRTC_Y", 0);
+      //! @todo: disabled until upstream kernel changes are merged
+      // if (DisplayHardwareScalingEnabled())
+      // {
+      //   SetScalingFilter(m_gui_plane, "SCALING_FILTER", "Nearest Neighbor");
+      // }
+      // else
+      {
+        AddProperty(m_gui_plane, "CRTC_W", m_mode->hdisplay);
+        AddProperty(m_gui_plane, "CRTC_H", m_mode->vdisplay);
+      }
+    }
   }
   else if (videoLayer && !CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls())
   {
@@ -119,21 +123,25 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     AddProperty(m_gui_plane, "CRTC_ID", 0);
   }
 
-  auto ret = drmModeAtomicCommit(m_fd, m_req->Get(), flags | DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
-  if (ret < 0)
+  int ret = 0;
+  if (modeset)
   {
-    CLog::Log(LOGERROR,
-              "CDRMAtomic::{} - test commit failed: ({}) - falling back to last successful atomic "
-              "request",
-              __FUNCTION__, strerror(errno));
+    ret = drmModeAtomicCommit(m_fd, m_req->Get(), flags | DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
+    if (ret < 0)
+    {
+      CLog::Log(LOGERROR,
+                "CDRMAtomic::{} - test commit failed: ({}) - falling back to last successful atomic "
+                "request",
+                __FUNCTION__, strerror(errno));
 
-    auto oldRequest = m_atomicRequestQueue.front().get();
-    CDRMAtomicRequest::LogAtomicDiff(m_req, oldRequest);
-    m_req = oldRequest;
+      auto oldRequest = m_atomicRequestQueue.front().get();
+      CDRMAtomicRequest::LogAtomicDiff(m_req, oldRequest);
+      m_req = oldRequest;
 
-    // update the old atomic request with the new fb id to avoid tearing
-    if (rendered)
-      AddProperty(m_gui_plane, "FB_ID", fb_id);
+      // update the old atomic request with the new fb id to avoid tearing
+      if (rendered)
+        AddProperty(m_gui_plane, "FB_ID", fb_id);
+    }
   }
 
   ret = drmModeAtomicCommit(m_fd, m_req->Get(), flags, nullptr);
@@ -146,7 +154,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
   if (CServiceBroker::GetLogging().CanLogComponent(LOGWINDOWING))
     m_req->LogAtomicRequest();
 
-  if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+  if (modeset)
   {
     if (drmModeDestroyPropertyBlob(m_fd, blob_id) != 0)
       CLog::Log(LOGERROR, "CDRMAtomic::{} - failed to destroy property blob: {}", __FUNCTION__,
