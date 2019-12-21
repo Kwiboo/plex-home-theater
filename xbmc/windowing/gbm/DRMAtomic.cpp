@@ -27,7 +27,8 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
 {
   uint32_t blob_id;
 
-  if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+  bool modeset = (flags & DRM_MODE_ATOMIC_ALLOW_MODESET);
+  if (modeset)
   {
     if (!AddProperty(m_connector, "CRTC_ID", m_crtc->crtc->crtc_id))
     {
@@ -67,14 +68,18 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
   {
     AddProperty(m_gui_plane, "FB_ID", fb_id);
     AddProperty(m_gui_plane, "CRTC_ID", m_crtc->crtc->crtc_id);
-    AddProperty(m_gui_plane, "SRC_X", 0);
-    AddProperty(m_gui_plane, "SRC_Y", 0);
-    AddProperty(m_gui_plane, "SRC_W", m_width << 16);
-    AddProperty(m_gui_plane, "SRC_H", m_height << 16);
-    AddProperty(m_gui_plane, "CRTC_X", 0);
-    AddProperty(m_gui_plane, "CRTC_Y", 0);
-    AddProperty(m_gui_plane, "CRTC_W", m_mode->hdisplay);
-    AddProperty(m_gui_plane, "CRTC_H", m_mode->vdisplay);
+
+    if (modeset)
+    {
+      AddProperty(m_gui_plane, "SRC_X", 0);
+      AddProperty(m_gui_plane, "SRC_Y", 0);
+      AddProperty(m_gui_plane, "SRC_W", m_width << 16);
+      AddProperty(m_gui_plane, "SRC_H", m_height << 16);
+      AddProperty(m_gui_plane, "CRTC_X", 0);
+      AddProperty(m_gui_plane, "CRTC_Y", 0);
+      AddProperty(m_gui_plane, "CRTC_W", m_mode->hdisplay);
+      AddProperty(m_gui_plane, "CRTC_H", m_mode->vdisplay);
+    }
   }
   else if (videoLayer && !CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls())
   {
@@ -83,12 +88,17 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     AddProperty(m_gui_plane, "CRTC_ID", 0);
   }
 
-  auto ret = drmModeAtomicCommit(m_fd, m_req, flags | DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
-  if (ret < 0)
+  int ret = 0;
+  if (modeset)
   {
-    CLog::Log(LOGERROR, "CDRMAtomic::%s - test commit failed: %s", __FUNCTION__, strerror(errno));
+    ret = drmModeAtomicCommit(m_fd, m_req, flags | DRM_MODE_ATOMIC_TEST_ONLY, nullptr);
+    if (ret < 0)
+    {
+      CLog::Log(LOGERROR, "CDRMAtomic::%s - test commit failed: %s", __FUNCTION__, strerror(errno));
+    }
   }
-  else if (ret == 0)
+
+  if (ret == 0)
   {
     ret = drmModeAtomicCommit(m_fd, m_req, flags, nullptr);
     if (ret < 0)
@@ -97,7 +107,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     }
   }
 
-  if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+  if (modeset)
   {
     if (drmModeDestroyPropertyBlob(m_fd, blob_id) != 0)
       CLog::Log(LOGERROR, "CDRMAtomic::%s - failed to destroy property blob: %s", __FUNCTION__, strerror(errno));
