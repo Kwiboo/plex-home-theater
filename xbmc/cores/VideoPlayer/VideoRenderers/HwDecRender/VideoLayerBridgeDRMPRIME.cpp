@@ -43,6 +43,10 @@ void CVideoLayerBridgeDRMPRIME::Disable()
       drmModeDestroyPropertyBlob(m_DRM->GetFileDescriptor(), m_hdr_blob_id);
     m_hdr_blob_id = 0;
   }
+  if (m_DRM->SupportsProperty(connector, "Colorspace"))
+  {
+    m_DRM->AddProperty(connector, "Colorspace", 0);
+  }
 }
 
 void CVideoLayerBridgeDRMPRIME::Acquire(CVideoBufferDRMPRIME* buffer)
@@ -239,6 +243,10 @@ void CVideoLayerBridgeDRMPRIME::Configure(CVideoBufferDRMPRIME* buffer)
 
     m_DRM->AddProperty(connector, "HDR_OUTPUT_METADATA", m_hdr_blob_id);
     m_DRM->SetActive(true);
+  }
+  if (m_DRM->SupportsProperty(connector, "Colorspace"))
+  {
+    m_DRM->AddProperty(connector, "Colorspace", GetColorEncoding(picture) == DRM_COLOR_YCBCR_BT2020 ? (GetEOTF(picture) ? 10 : 9) : 0);
   }
 }
 
