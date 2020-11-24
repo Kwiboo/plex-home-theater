@@ -249,7 +249,14 @@ void CVideoLayerBridgeDRMPRIME::Configure(CVideoBufferDRMPRIME* buffer)
   }
   if (m_DRM->SupportsProperty(connector, "Colorspace"))
   {
-    m_DRM->AddProperty(connector, "Colorspace", GetColorEncoding(picture) == DRM_COLOR_YCBCR_BT2020 ? (GetEOTF(picture) ? 10 : 9) : 0);
+#define DRM_MODE_COLORIMETRY_BT2020_RGB 9
+#define DRM_MODE_COLORIMETRY_BT2020_YCC 10
+    uint64_t colorspace = 0;
+    if (GetColorEncoding(picture) == DRM_COLOR_YCBCR_BT2020)
+      colorspace = GetEOTF(picture) ?
+                   DRM_MODE_COLORIMETRY_BT2020_YCC :
+                   DRM_MODE_COLORIMETRY_BT2020_RGB;
+    m_DRM->AddProperty(connector, "Colorspace", colorspace);
   }
 }
 
